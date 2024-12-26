@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+{% block content %}
+  <div class="container">
+    
+    <form method="POST" autocomplete="off">
+      {% csrf_token %}
+      <fieldset>
+        {{ form|crispy }}
+        <legend class="mb-4">Are you sure you want to delete {{object}}</legend>
+      </fieldset>
+      <div class="form-group py-3">
+        <input class="btn btn-outline-danger" type="submit" value="Delete"/>
+      </div>
+
+    </form>
+    <div class="border-top pt-3">
+      <a href="{% url 'home' %}">Cancel</a>
+    </div>
+  </div>
+{% endblock %}

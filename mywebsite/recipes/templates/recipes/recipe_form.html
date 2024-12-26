@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container">
+    <form method="POST" action="{% if object %}{% url 'update' object.id %}
+    {% else %}{% url 'create' %}{% endif %}" 
+     autocomplete="off" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        <h3>Ingredients</h3>
+        {{ ingredient_formset.management_form }}
+        <div id="ingredient-formset", class="ingredient-container">
+            {% for form in ingredient_formset %}
+                <div class="ingredient-form">
+                    <label for="{{ form.name.id_for_label }}">Name:</label>
+                    {{ form.name }}
+                    
+                    <label for="{{ form.quantity.id_for_label }}">Quantity:</label>
+                    {{ form.quantity }}
+                    
+                    <label for="{{ form.measurement.id_for_label }}">Measurement:</label>
+                    {{ form.measurement }}
+                </div>
+            {% endfor %}
+            <div id="empty-ingredient-form" style="display: none;" class="ingredient-form">
+                {{ ingredient_formset.empty_form.as_p }}
+            </div>
+        </div>
+        
+        <button type="button" onclick="addIngredientForm()">Add Ingredient</button>
+
+        <h3>Steps</h3>
+        <div id="step-formset">
+            {{ step_formset.management_form }}
+            {% for form in step_formset %}
+                <div class="step-form">
+                    {{ form.as_p }}
+
+                </div>
+            {% endfor %}
+            
+            <!-- Empty form (hidden initially) to serve as template for adding new forms -->
+            <div id="empty-step-form" style="display: none;" class="step-form">
+                {{ step_formset.empty_form.as_p }}
+            </div>
+        </div>
+        <button id="add-step-button" type="button" onclick="addStepForm()">Add Step</button>
+        
+
+        <div class="form-group py-3">
+            <input class="btn btn-outline-primary" type="submit" value="Save" />
+        </div>
+    </form>
+</div>
+
+<script>
+
+    function addIngredientForm() {
+        let formsetDiv = document.getElementById('ingredient-formset');
+        let totalFormsInput = document.querySelector('input[name="ingredients-TOTAL_FORMS"]');
+        let totalForms = parseInt(totalFormsInput.value, 10);
+    
+        // Get the empty form template
+        let emptyFormTemplate = document.getElementById('empty-ingredient-form');
+        if (!emptyFormTemplate) {
+            console.error('Empty ingredient form not found!');
+            return;
+        }
+    
+        // Clone and update the empty form
+        let newForm = emptyFormTemplate.cloneNode(true);
+        newForm.style.display = '';  // Make the cloned form visible
+        newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, totalForms);
+    
+        formsetDiv.appendChild(newForm);
+    
+        // Increment TOTAL_FORMS
+        totalFormsInput.value = totalForms + 1;
+    }
+    
+    function addStepForm() {
+        let formsetDiv = document.getElementById('step-formset');
+        let totalFormsInput = document.querySelector('input[name="steps-TOTAL_FORMS"]');
+        let totalForms = parseInt(totalFormsInput.value, 10);
+    
+        // Get the empty form template
+        let emptyFormTemplate = document.getElementById('empty-step-form');
+        if (!emptyFormTemplate) {
+            console.error('Empty ingredient form not found!');
+            return;
+        }
+    
+        // Clone and update the empty form
+        let newForm = emptyFormTemplate.cloneNode(true);
+        newForm.style.display = '';  // Make the cloned form visible
+        newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, totalForms);
+    
+        formsetDiv.appendChild(newForm);
+    
+        // Increment TOTAL_FORMS
+        totalFormsInput.value = totalForms + 1;
+    }   
+</script>
+{% endblock %}

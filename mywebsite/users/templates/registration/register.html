@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+
+{% load crispy_forms_tags %}
+{% block content %}
+  <div class="container">
+    <h2>Register</h2>
+    <form method="POST" autocomplete="off">
+      {% csrf_token %}
+      <fieldset>
+        {{ form|crispy }}
+        <legend class="board-bottom mb-4">Sign Up</legend>
+      </fieldset>
+      <div class="form-group py-3">
+        <input class="btn btn-outline-primary" type="submit" value="Sign Up"/>
+      </div>
+
+    </form>
+    <div class="border-top pt-3">
+      <a href="{% url 'login' %}">Already have an account? log in here!</a>
+    </div>
+  </div>
+{% endblock %}
