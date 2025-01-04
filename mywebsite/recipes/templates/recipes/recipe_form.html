@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
-
+{% load static %}
 {% block content %}
 <div class="container">
     <form method="POST" action="{% if object %}{% url 'update' object.id %}
@@ -71,9 +71,8 @@
     
         // Clone and update the empty form
         let newForm = emptyFormTemplate.cloneNode(true);
-        newForm.style.display = '';  // Make the cloned form visible
+        newForm.style.display = 'flex';  // Make the cloned form visible
         newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, totalForms);
-    
         formsetDiv.appendChild(newForm);
     
         // Increment TOTAL_FORMS

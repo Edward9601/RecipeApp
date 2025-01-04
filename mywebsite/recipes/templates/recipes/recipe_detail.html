@@ -1,21 +1,19 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %} Recipe: {{ object.title }} {% endblock %}
 
 {% block content %}
 <div class="container my-4">
-    <!-- Recipe Title -->
     <h1 class="text-center mb-4">{{ object.title }}</h1>
 
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
-                <!-- Recipe Image -->
                 {% if object.picture %}
-                <img src="{{ object.picture.url }}" class="card-img-top" alt="Recipe Image">
+                    <img src="{{ object.picture.url }}" class="card-img-top" alt="Recipe Image">
                 {% else %}
-                <p class="text-center text-muted py-4">No image available.</p>
+                    <p class="text-center text-muted py-4">No image available.</p>
                 {% endif %}
-                <!-- Description -->
                 <div class="card-body">
                     <h2>Description</h2>
                     <p class="card-text">{{ object.description }}</p>
@@ -24,9 +22,8 @@
         </div>
     </div>
 
-    <!-- Ingredients and Steps Section -->
     <div class="row mt-4">
-        <!-- Ingredients -->
+    
         <div class="col-md-6">
             <div class="card p-3">
                 <h2>Ingredients</h2>
@@ -40,7 +37,6 @@
             </div>
         </div>
 
-        <!-- Steps -->
         <div class="col-md-6">
             <div class="card p-3">
                 <h2>Steps</h2>
@@ -55,7 +51,6 @@
         </div>
     </div>
 
-    <!-- Buttons -->
     <div class="row mt-4">
         <div class="col text-center">
             <a class="btn btn-outline-info mx-2" href="{% url 'update' object.id %}">Update</a>
