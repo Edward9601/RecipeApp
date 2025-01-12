@@ -77,12 +77,12 @@ WSGI_APPLICATION = 'mywebsite.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'test',
-        'NAME': 'test',
-        'USER': 'test',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dev_db',
+        'USER': 'edwarddumbuya',
         'PASSWORD': 'test',
-        'HOST': 'test',  # Or the IP address if the database is on a different server
-        'PORT': 'test',
+        'HOST': 'localhost',  # Or the IP address if the database is on a different server
+        'PORT': '5432',
     }
 }
 
@@ -121,7 +121,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
-    BASE_DIR/ 'static',
+    BASE_DIR/ 'recipes/static',
 ]
 
 # Default primary key field type
@@ -129,8 +129,9 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/recipes/home'
-LOGOUT_REDIRECT_URL = '/login'
+LOGOUT_REDIRECT_URL = '/'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = 'bootstrap5'

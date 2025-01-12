@@ -8,7 +8,7 @@ from django.urls import reverse_lazy
 
 
 # @login_required(login_url='/register') doesn't work with classes seems like
-class RecipeListView(ListView):
+class RecipeListView(LoginRequiredMixin, ListView):
     model = Recipe
     template_name = 'recipes/home.html'
     form_class = RecipeForm
