@@ -29,7 +29,11 @@
                 <h2>Ingredients</h2>
                 <ul>
                     {% for ingredient in ingredients %}
-                        <li>{{ ingredient.quantity }} {{ ingredient.measurement }} {{ ingredient.name }}</li>
+                        {% if ingredient.measurement%}
+                            <li>{{ ingredient.quantity }} {{ ingredient.measurement }} {{ ingredient.name }}</li>
+                        {% else %}
+                            <li>{{ ingredient.quantity }} {{ ingredient.name }}</li>
+                        {% endif %}
                     {% empty %}
                         <li>No ingredients added yet.</li>
                     {% endfor %}

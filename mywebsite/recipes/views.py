@@ -7,7 +7,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy
 
 
-# @login_required(login_url='/register') doesn't work with classes seems like
+
 class RecipeListView(LoginRequiredMixin, ListView):
     model = Recipe
     template_name = 'recipes/home.html'
@@ -16,15 +16,13 @@ class RecipeListView(LoginRequiredMixin, ListView):
     context_object_name = 'recipes'
 
 
-class RecipeDetailView(DetailView):
+class RecipeDetailView(LoginRequiredMixin, DetailView):
     model = Recipe
 
     form_class = RecipeForm
 
 
     def get_context_data(self, **kwargs):
-        print(self.object.ingredients.all())  # Should list ingredients
-        print(self.object.steps.all()) 
         context = super().get_context_data(**kwargs)
         context['steps'] = self.object.steps.order_by('order')
         context['ingredients'] = self.object.ingredients.all()
@@ -32,8 +30,7 @@ class RecipeDetailView(DetailView):
         return context
         
 
-#LoginRequiredMixin,
-class RecipeCreateView( CreateView):
+class RecipeCreateView(LoginRequiredMixin, CreateView):
     model = Recipe
     form_class = RecipeForm
     
@@ -76,8 +73,7 @@ class RecipeCreateView( CreateView):
         return super().form_valid(form)
 
 
-#LoginRequiredMixin, 
-class RecipeUpdateView(RecipeCreateView, UpdateView):
+class RecipeUpdateView(RecipeCreateView,LoginRequiredMixin, UpdateView):
     template_name = 'recipes/recipe_form.html'
 
     def get_context_data(self, **kwargs):
@@ -100,7 +96,6 @@ class RecipeUpdateView(RecipeCreateView, UpdateView):
 
         return context
 
-#LoginRequiredMixin,
-class RecipeDeleteView( DeleteView):
+class RecipeDeleteView(LoginRequiredMixin,  DeleteView):
     model = Recipe
     success_url = reverse_lazy('home')

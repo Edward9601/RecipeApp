@@ -48,10 +48,12 @@ class Ingredient(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='ingredients')
     name = models.CharField(max_length=100)
     quantity = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    measurement = models.CharField(max_length=50, choices=MEASUREMENT_CHOICES, null=True)
+    measurement = models.CharField(max_length=50, choices=MEASUREMENT_CHOICES, null=True, blank=True)
 
     def __str__(self) -> str:
-        return f'{self.quantity} {self.measurement} {self.name}'
+        quantity_display = f"{self.quantity} " if self.quantity else ""
+        measurement_display = f"{self.measurement} " if self.measurement else ""
+        return f"{quantity_display}{measurement_display}{self.name}".strip()
     
 
 class Step(models.Model):

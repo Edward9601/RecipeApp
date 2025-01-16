@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 
 'app/model_viewtype'
-'recipes/recipe_detail.html'
+
 
 urlpatterns = [
     path("home/", views.RecipeListView.as_view(), name='home'),
