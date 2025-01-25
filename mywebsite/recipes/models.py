@@ -38,17 +38,18 @@ class Ingredient(models.Model):
         ('gram', 'Gram'),
         ('tbs', 'Tablespoon'),
         ('tsp', 'Teaspoon'),
-        ('ml', 'Milliliter'),
+        ('Milliliter', 'Milliliter'),
         ('liter', 'Liter'),
-        ('lbs', 'Pound'),
+        ('Pound', 'Pound'),
         ('bag', 'Bag'),
-        ('piece(s)', 'Piece(s)')
+        ('piece(s)', 'Piece(s)'),
+        ('slice(s)', 'Slices')
     ]
 
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='ingredients')
-    name = models.CharField(max_length=100)
-    quantity = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    measurement = models.CharField(max_length=50, choices=MEASUREMENT_CHOICES, null=True, blank=True)
+    name = models.CharField(max_length=70)
+    quantity = models.CharField(max_length=20, null=True, blank=True)
+    measurement = models.CharField(max_length=50, choices=MEASUREMENT_CHOICES, null=True, blank=True, default='cup')
 
     def __str__(self) -> str:
         quantity_display = f"{self.quantity} " if self.quantity else ""

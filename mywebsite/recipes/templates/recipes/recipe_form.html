@@ -14,6 +14,7 @@
         <div id="ingredient-formset", class="ingredient-container">
             {% for form in ingredient_formset %}
                 <div class="ingredient-form">
+                    {{ form.id }} <!-- Render the hidden ID field to keep track of changes-->
                     <label for="{{ form.name.id_for_label }}">Name:</label>
                     {{ form.name }}
                     

@@ -50,7 +50,6 @@ class RecipeCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        print("form data: ", form.data)
         self.object = form.save()
 
         # Ingredient formset handling
@@ -58,17 +57,16 @@ class RecipeCreateView(LoginRequiredMixin, CreateView):
         ingredient_formset = context['ingredient_formset']
         if ingredient_formset.is_valid():
             ingredient_formset.save()
-            print("Ingredients saved:", ingredient_formset.cleaned_data)
         else:
-            print("Ingredient formset invalid:", ingredient_formset.errors)
+            return self.form_invalid(form)
 
         # Step formset handling
         step_formset = context['step_formset']
         if step_formset.is_valid():
             step_formset.save()
-            print("Steps saved:", step_formset.cleaned_data)
         else:
-            print("Step formset invalid:", step_formset.errors)
+
+            return self.form_invalid(form)
 
         return super().form_valid(form)
 
