@@ -14,15 +14,7 @@
         <div id="ingredient-formset", class="ingredient-container">
             {% for form in ingredient_formset %}
                 <div class="ingredient-form">
-                    {{ form.id }} <!-- Render the hidden ID field to keep track of changes-->
-                    <label for="{{ form.name.id_for_label }}">Name:</label>
-                    {{ form.name }}
-                    
-                    <label for="{{ form.quantity.id_for_label }}">Quantity:</label>
-                    {{ form.quantity }}
-                    
-                    <label for="{{ form.measurement.id_for_label }}">Measurement:</label>
-                    {{ form.measurement }}
+                    {{ form.as_p }}
                 </div>
             {% endfor %}
         </div>
@@ -34,17 +26,16 @@
         <button type="button" onclick="addIngredientForm()">Add Ingredient</button>
 
         <h3>Steps</h3>
+        {{ step_formset.management_form }}
         <div id="step-formset">
-            {{ step_formset.management_form }}
             {% for form in step_formset %}
                 <div class="step-form">
                     {{ form.as_p }}
-
                 </div>
             {% endfor %}
         </div>
         <!-- Empty form (hidden initially) to serve as template for adding new forms -->
-        <div id="empty-step-form" style="display: none;" class="step-form">
+        <div id="empty-step-form" style="display: none;" class="hidden">
             {{ step_formset.empty_form.as_p }}
         </div>
         <button id="add-step-button" type="button" onclick="addStepForm()">Add Step</button>
@@ -61,21 +52,20 @@
     function addIngredientForm() {
  
         let formsetDiv = document.getElementById('ingredient-formset');
+
         let totalFormsInput = document.getElementById('id_ingredients-TOTAL_FORMS');
         let totalForms = parseInt(totalFormsInput.value, 10);
+
         const currentIngridients = document.getElementsByClassName('ingredient-form');
         let ingredientsCount = currentIngridients.length;
-        console.log(currentIngridients);
+
         // Get the empty form template, then clone the empty form
         let emptyFormTemplate = document.getElementById('empty-ingredient-form').cloneNode(true);
         emptyFormTemplate.setAttribute('class', 'ingredient-form');
-        emptyFormTemplate.setAttribute('id', `id_ingredients-${ingredientsCount++}-name"`);
+        emptyFormTemplate.removeAttribute('id');
 
-        formsetDiv.append(emptyFormTemplate);
-
-        emptyFormTemplate.style.display = 'flex';  // Make the cloned form visible
+        emptyFormTemplate.style.removeProperty('display');  // Make the cloned form visible
         emptyFormTemplate.innerHTML = emptyFormTemplate.innerHTML.replace(/__prefix__/g, totalForms);
-        console.log(emptyFormTemplate.innerHTML.replace(/__prefix__/g, totalForms));
         formsetDiv.appendChild(emptyFormTemplate);
     
         // Increment TOTAL_FORMS
@@ -87,19 +77,16 @@
         let totalFormsInput = document.getElementById('id_steps-TOTAL_FORMS');
         let totalForms = parseInt(totalFormsInput.value, 10);
 
+        console.log(totalForms);
         const currentSteps = document.getElementsByClassName('step-from');
-        let stepsCount = currentSteps.lenght;
     
         // Get the empty form template and clone and update the empty form
         let emptyFormTemplate = document.getElementById('empty-step-form').cloneNode(true);
-        if (!emptyFormTemplate) {
-            console.error('Empty ingredient form not found!');
-            return;
-        }
-        emptyFormTemplate.setAttribute('class', 'step-form');
-        emptyFormTemplate.setAttribute('id', `steps-${stepsCount++}-name"`);
 
-        emptyFormTemplate.style.display = 'flex';  // Make the cloned form visible
+        emptyFormTemplate.setAttribute('class', 'step-form');
+        emptyFormTemplate.removeAttribute('id');
+
+        emptyFormTemplate.style.removeProperty('display');  // Make the cloned form visible
         emptyFormTemplate.innerHTML = emptyFormTemplate.innerHTML.replace(/__prefix__/g, totalForms);
     
         formsetDiv.appendChild(emptyFormTemplate);
