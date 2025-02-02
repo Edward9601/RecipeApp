@@ -5,6 +5,7 @@ from .forms import IngredientForm, StepForm, RecipeForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.shortcuts import render
 
 
 
@@ -14,6 +15,20 @@ class RecipeListView(LoginRequiredMixin, ListView):
     form_class = RecipeForm
 
     context_object_name = 'recipes'
+
+    def get(self, request, *args, **kwargs):
+        if request.htmx:
+            return self.get_recipes(request)
+        return super().get(request, *args, **kwargs)
+        
+
+    def get_recipes(self, request):
+        search = request.GET.get('search_text')
+    
+        recipes = self.model.objects.filter(title__icontains=search)  if search else self.model.objects.all()
+        return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
+
+
 
 
 class RecipeDetailView(LoginRequiredMixin, DetailView):
@@ -65,7 +80,6 @@ class RecipeCreateView(LoginRequiredMixin, CreateView):
         if step_formset.is_valid():
             step_formset.save()
         else:
-
             return self.form_invalid(form)
 
         return super().form_valid(form)
