@@ -1,5 +1,5 @@
 from django.forms import inlineformset_factory
-from .models import Recipe, Ingredient, Step
+from .models import Recipe, Ingredient, Step, RecipeSubRecipe
 from .forms import IngredientForm, StepForm, RecipeForm
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -44,7 +44,6 @@ class RecipeListView(LoginRequiredMixin, ListView):
 
 class RecipeDetailView(LoginRequiredMixin, DetailView):
     model = Recipe
-
     form_class = RecipeForm
 
 

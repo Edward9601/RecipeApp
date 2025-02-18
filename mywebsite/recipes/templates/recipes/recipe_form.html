@@ -4,7 +4,8 @@
 {% block content %}
 <div class="container">
     <form method="POST" action="{% if object %}{% url 'update' object.id %}
-    {% else %}{% url 'create' %}{% endif %}" 
+    {% else %}
+    {% url 'create' %}{% endif %}" 
      autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form|crispy }}

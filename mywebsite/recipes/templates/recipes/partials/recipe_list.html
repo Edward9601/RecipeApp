@@ -1,0 +1,17 @@
+<div class="row">
+    {% for recipe in recipes %}
+                <div class="col-md-4 mb-4">
+                    <div class="card my-4">
+                        {% if recipe.picture %}
+                            <img src="{{ recipe.picture.url }}" class="image">
+                        {% endif %}
+                        <div class="card-body">
+                            <a href="{% url 'detail' recipe.pk %}"  class="card-title"><h5>{{ recipe.title }}</h5></a>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ recipe.author }}</h6>
+                            <p class="card-text">{{ recipe.description| truncatechars:200 }}</p>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ recipe.created_at }}</h6>
+                        </div>
+                    </div>
+                </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,9 @@
+<input
+    name="search_text"
+    type="text"
+    value="{{search_text}}"
+    placeholder="Title search"
+    hx-get="{% url search_url %}"
+    hx-target="#results"
+    hx-trigger="input delay:0.3s"
+>
