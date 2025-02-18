@@ -16,18 +16,29 @@ class RecipeListView(LoginRequiredMixin, ListView):
 
     context_object_name = 'recipes'
 
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        context['search_url'] = 'title_search' 
+        return context
+        
+
     def get(self, request, *args, **kwargs):
         if request.htmx:
             return self.get_recipes(request)
+        if request.path.endswith('sub-recipes'):
+            return self.get_sub_recipes(request)
         return super().get(request, *args, **kwargs)
         
 
     def get_recipes(self, request):
         search = request.GET.get('search_text')
-    
         recipes = self.model.objects.filter(title__icontains=search)  if search else self.model.objects.all()
         return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
-
+    
+    def get_sub_recipes(self, request):
+        sub_recipes = self.model.objects.all()
+        return render(request, 'recipes/sub_recipe.html', {'search_url': 'search_subrecipes'})
 
 
 
@@ -52,7 +63,7 @@ class RecipeCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        ingredient_form_set = inlineformset_factory(Recipe, Ingredient, form=IngredientForm, extra=1, can_delete=False)
+        ingredient_form_set = inlineformset_factory(Recipe, Ingredient,fk_name='recipe', form=IngredientForm, extra=1, can_delete=False)
         step_form_set = inlineformset_factory(Recipe, Step, form=StepForm, extra=1, can_delete=False)
         if self.request.POST:
             context['ingredient_formset'] = ingredient_form_set(self.request.POST, instance=self.object or Recipe(), prefix='ingredients')
