@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} Recipe: {{ object.title }} {% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="text-center mb-4">{{ object.title }}</h1>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card p-3">
+                <h2>Ingredients</h2>
+                <ul>
+                    {% for ingredient in ingredients %}
+                        {% if ingredient.measurement%}
+                            <li>{{ ingredient.quantity }} {{ ingredient.measurement }} {{ ingredient.name }}</li>
+                        {% else %}
+                            <li>{{ ingredient.quantity }} {{ ingredient.name }}</li>
+                        {% endif %}
+                    {% empty %}
+                        <li>No ingredients added yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-3">
+                <h2>Steps</h2>
+                <ol>
+                    {% for step in steps %}
+                        <li>{{ step.description }}</li>
+                    {% empty %}
+                        <li>No steps added yet.</li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col text-center">
+            <a class="btn btn-outline-info mx-2" href="{% url 'update_sub_recipe' object.id %}">Update</a>
+            <a class="btn btn-outline-danger mx-2" href="{% url 'delete_sub_recipe' object.id %}">Delete</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

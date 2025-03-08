@@ -7,12 +7,13 @@
 <section>
     {% include 'recipes/partials/search.html'%}
 </section>
+<div>
+    <a class="link" href="{% url 'create_sub_recipe' %}">Create sub-recipe</a>
+</div>
 <section>
-    <div id="results"  class="container">
-            
+    <div id="results" class="container">
+        {% include 'recipes/partials/sub_recipe_list.html' %}
     </div>
 <section>
-
-
 {% endblock %}
 
