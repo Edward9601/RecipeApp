@@ -8,21 +8,23 @@ from django.urls import reverse_lazy
 from django.shortcuts import render
 
 
-
-class RecipeListView(LoginRequiredMixin, ListView):
+class BaseRecipeView(LoginRequiredMixin):
+    """
+    Base view for recipes to extend
+    """
     model = Recipe
-    template_name = 'recipes/home.html'
     form_class = RecipeForm
 
-    context_object_name = 'recipes'
-
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
         context['search_url'] = 'title_search' 
         return context
-        
 
+class RecipeListView(BaseRecipeView, ListView):
+    template_name = 'recipes/home.html'
+    context_object_name = 'recipes'
+
+    
     def get(self, request, *args, **kwargs):
         if request.htmx:
             return self.get_recipes(request)
@@ -33,11 +35,9 @@ class RecipeListView(LoginRequiredMixin, ListView):
         search = request.GET.get('search_text')
         recipes = self.model.objects.filter(title__icontains=search)  if search else self.model.objects.all()
         return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
+    
 
-
-class RecipeDetailView(LoginRequiredMixin, DetailView):
-    model = Recipe
-    form_class = RecipeForm
+class RecipeDetailView(BaseRecipeView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -46,12 +46,7 @@ class RecipeDetailView(LoginRequiredMixin, DetailView):
         
         return context
     
-        
-
-class RecipeCreateView(LoginRequiredMixin, CreateView):
-    model = Recipe
-    form_class = RecipeForm
-    
+class RecipeCreateView(BaseRecipeView, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -87,8 +82,9 @@ class RecipeCreateView(LoginRequiredMixin, CreateView):
 
         return super().form_valid(form)
     
-
-class RecipeUpdateView(RecipeCreateView,LoginRequiredMixin, UpdateView):
+class RecipeUpdateView(LoginRequiredMixin, UpdateView):
+    model = Recipe
+    form_class = RecipeForm
     template_name = 'recipes/recipe_form.html'
 
     def get_context_data(self, **kwargs):
@@ -111,17 +107,55 @@ class RecipeUpdateView(RecipeCreateView,LoginRequiredMixin, UpdateView):
 
         return context
     
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        self.object = form.save()
 
-class RecipeDeleteView(LoginRequiredMixin,  DeleteView):
-    model = Recipe
+        context = self.get_context_data()
+        ingredient_formset = context['ingredient_formset']
+        if ingredient_formset.is_valid():
+            ingredient_formset.save()
+        else:
+            return self.form_invalid(form)
+        steps_formset = context['step_formset']
+        if steps_formset.is_valid():
+            steps_formset.save()
+        else:
+            return self.form_invalid(form)
+        
+        return super().form_valid(form)
+    
+class RecipeDeleteView(BaseRecipeView,  DeleteView):
     success_url = reverse_lazy('home')
-
-
-
-
-class SubRecipeCreateView(LoginRequiredMixin, CreateView):
+    
+class BaseSubRecipeView(LoginRequiredMixin):
     model = SubRecipe
     form_class = SubRecipeForm
+
+
+class SubRecipeListView(BaseSubRecipeView, ListView):
+    template_name = 'recipes/sub_recipe.html'
+    context_object_name = 'sub_recipes'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        context['search_url'] = 'sub_recipe_title_search' 
+        return context
+    
+    def get(self, request, *args, **kwargs):
+        if request.htmx:
+            return self.search_subrecipes(request)
+        else:
+            return super().get(request, *args, **kwargs)
+
+    def search_subrecipes(self, request):
+        search = request.GET.get('search_text')
+        sub_recipes = self.model.objects.filter(title__icontains=search) if search else self.model.objects.all()
+        return render(request, 'recipes/partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
+    
+    
+class SubRecipeCreateView(BaseSubRecipeView, CreateView):
     template_name = 'recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
@@ -157,21 +191,19 @@ class SubRecipeCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
         
         return super().form_valid(form)
-        
-
-class SubRecipeDetailView(LoginRequiredMixin, DetailView):
-    model = SubRecipe
-    form_class = SubRecipeForm
+    
+    
+class SubRecipeDetailView(BaseSubRecipeView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['steps'] = self.object.sub_steps.order_by('order')
+        context['steps'] = self.object.steps.order_by('order')
         context['ingredients'] = self.object.ingredients.all()
         
         return context
-
-class SubRecipeUpdateView(SubRecipeCreateView,LoginRequiredMixin, UpdateView):
-    template_name = 'recipes/sub_recipe_form.html'
+    
+class SubRecipeUpdateView(BaseSubRecipeView, UpdateView):
+    template_name = 'recipes/recipe_form.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -192,32 +224,25 @@ class SubRecipeUpdateView(SubRecipeCreateView,LoginRequiredMixin, UpdateView):
             context['step_formset'] = step_formset(instance=self.object)
 
         return context
-
-
-class SubRecipeListView(LoginRequiredMixin, ListView):
-    model = SubRecipe
-    template_name = 'recipes/sub_recipe.html'
-    form_class = SubRecipeForm
-
-    context_object_name = 'sub_recipes'
-
-    def get_context_data(self, **kwargs):
-
-        context = super().get_context_data(**kwargs)
-        context['search_url'] = 'sub_recipe_title_search' 
-        return context
     
-    def get(self, request, *args, **kwargs):
-        if request.htmx:
-            return self.search_subrecipes(request)
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        self.object = form.save()
+
+        context = self.get_context_data()
+        ingredient_formset = context['ingredient_formset']
+        if ingredient_formset.is_valid():
+            ingredient_formset.save()
         else:
-            return super().get(request, *args, **kwargs)
+            return self.form_invalid(form)
+        steps_formset = context['step_formset']
+        if steps_formset.is_valid():
+            steps_formset.save()
+        else:
+            return self.form_invalid(form)
+        
+        return super().form_valid(form)
 
-    def search_subrecipes(self, request):
-        search = request.GET.get('search_text')
-        sub_recipes = self.model.objects.filter(title__icontains=search) if search else self.model.objects.all()
-        return render(request, 'recipes/partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
 
-class SubRecipeDeleteView(LoginRequiredMixin,  DeleteView):
-    model = SubRecipe
+class SubRecipeDeleteView(BaseSubRecipeView,  DeleteView):
     success_url = reverse_lazy('sub_recipes')
