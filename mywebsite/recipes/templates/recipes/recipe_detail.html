@@ -18,6 +18,14 @@
                     <h2>Description</h2>
                     <p class="card-text">{{ object.description }}</p>
                 </div>
+                {% if object.sub_recipes %}
+                {% for sub_recipe in object.sub_recipes %}
+                    <div class="form-check">
+                        {{ sub_recipe.title }}  
+                        <label class="form-check-label">{{ sub_recipe.choice_label }}</label>
+                    </div>
+                {% endfor%}
+                {% endif %}
             </div>
         </div>
     </div>

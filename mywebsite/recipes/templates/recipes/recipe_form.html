@@ -8,10 +8,49 @@
     {% url 'create' %}{% endif %}" 
      autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form|crispy }}
+        <div class="mb-3">
+            {{ form.title|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+            {{ form.description|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+            {{ form.picture|as_crispy_field }}
+        </div>
+        {% if form.sub_recipes %}
+            <div class="dropdown">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="subRecipeDropdown">
+                    Select Sub-Recipes
+                </button>
+                <div class="dropdown-menu p-3 position-static w-100" id="subRecipeDropdownMenu">
+                    <div class="form-group">
+                        <label for="{{ form.sub_recipes.id_for_label }}">Sub Recipes</label>
+                        <div>{{ form.sub_recipes }}</div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <div class="conteiner-for-ingredients-and-steps">
             {% include 'recipes/partials/steps_and_ingredients_for_create_form.html'%}
         </div>
     </form>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const dropdownButton = document.getElementById("subRecipeDropdown");
+        const dropdownMenu = document.getElementById("subRecipeDropdownMenu");
+    
+        if (dropdownButton && dropdownMenu) {
+            dropdownButton.addEventListener("click", function (event) {
+                event.stopPropagation(); // Prevents clicks inside menu from closing it
+                dropdownMenu.classList.toggle("show");
+            });
+    
+        }
+    });
+</script>
+
 {% endblock %}
+
+

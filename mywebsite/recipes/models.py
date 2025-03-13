@@ -41,10 +41,12 @@ class BaseRecipe(models.Model):
 class Recipe(BaseRecipe):
     description = models.TextField(blank=True, null=True)
     picture = models.ImageField(upload_to='recipes_pictures/', blank=True, null=True)
+    sub_recipe = models.ManyToManyField('SubRecipe', through='RecipeSubRecipe',
+                                         related_name='main_recipes', blank=True, null=True)
 
 
 class SubRecipe(BaseRecipe):
-    recipes = models.ManyToManyField(Recipe, through='RecipeSubRecipe')
+    pass
 
 
 class RecipeSubRecipe(models.Model):

@@ -5,13 +5,13 @@ from .models import Recipe, RecipeIngredient, RecipeStep, SubRecipe, SubRecipeIn
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
-        fields = ['title', 'description', 'picture', 'note']
+        fields = ['title', 'description', 'picture']  # TODO add 'note' when will be needed
 
 
 class RecipeIngredientForm(forms.ModelForm):
     class Meta:
         model = RecipeIngredient
-        fields = ['name', 'quantity', 'measurement'] 
+        fields = ['name', 'quantity', 'measurement']
 
 
 class RecipeStepForm(forms.ModelForm):
@@ -19,15 +19,18 @@ class RecipeStepForm(forms.ModelForm):
         model = RecipeStep
         fields = ['description', 'order']
 
+
 class SubRecipeForm(forms.ModelForm):
     class Meta:
         model = SubRecipe
         fields = ['title', 'note']
 
+
 class SubRecipeIngredientForm(forms.ModelForm):
     class Meta:
         model = SubRecipeIngredient
         fields = ['name', 'quantity', 'measurement']
+
 
 class SubRecipeStepForm(forms.ModelForm):
     class Meta:
