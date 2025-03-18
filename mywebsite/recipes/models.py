@@ -41,8 +41,8 @@ class BaseRecipe(models.Model):
 class Recipe(BaseRecipe):
     description = models.TextField(blank=True, null=True)
     picture = models.ImageField(upload_to='recipes_pictures/', blank=True, null=True)
-    sub_recipe = models.ManyToManyField('SubRecipe', through='RecipeSubRecipe',
-                                         related_name='main_recipes', blank=True, null=True)
+    sub_recipes = models.ManyToManyField('SubRecipe', through='RecipeSubRecipe',
+                                         related_name='main_recipes', blank=True)
 
 
 class SubRecipe(BaseRecipe):
@@ -52,9 +52,9 @@ class SubRecipe(BaseRecipe):
 class RecipeSubRecipe(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='linked_recipes')
     sub_recipe = models.ForeignKey(SubRecipe, on_delete=models.CASCADE, related_name='linked_sub_recipes')
-    specific_notes = models.TextField(blank=True, null=True)
-    sub_recipe_quantity = models.CharField(max_length=20, null=True, blank=True)
-    sub_recipe_measurement = models.CharField(max_length=50, choices=MEASUREMENT_CHOICES, null=True, blank=True)
+    specific_notes = models.TextField(blank=True, null=True) # not used yet
+    sub_recipe_quantity = models.CharField(max_length=20, null=True, blank=True) # not used yet
+    sub_recipe_measurement = models.CharField(max_length=50, choices=MEASUREMENT_CHOICES, null=True, blank=True) # not used yet
 
     class Meta:
         constraints = [
@@ -81,7 +81,7 @@ class RecipeIngredient(Ingredient):
 
 
 class SubRecipeIngredient(Ingredient):
-    sub_recipe = models.ForeignKey(SubRecipe, on_delete=models.CASCADE, related_name='ingredients')
+    sub_recipe = models.ForeignKey(SubRecipe, on_delete=models.CASCADE, related_name='sub_ingredients')
 
 
 class Step(models.Model):

@@ -16,9 +16,14 @@ class BaseRecipeView(LoginRequiredMixin):
     """
     model = Recipe
     form_class = RecipeForm
+    intermediate_table = RecipeSubRecipe
 
 
 class RecipeListView(BaseRecipeView, ListView):
+    """
+    View to display all recipes
+    """
+     
     template_name = 'recipes/home.html'
     context_object_name = 'recipes'
 
@@ -39,22 +44,35 @@ class RecipeListView(BaseRecipeView, ListView):
 
 
 class RecipeDetailView(BaseRecipeView, DetailView):
+    """
+    View for recipe details, also displays related recipes
+    """
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['steps'] = self.object.steps.order_by('order')
         context['ingredients'] = self.object.ingredients.all()
-        context['sub_recipes'] = self.object.sub_recipe.all()
-
+        context['sub_recipes'] = self.object.sub_recipes.all()
+        sub_recipes = self.object.sub_recipes.all()
+        if sub_recipes:
+            for sub_recipe in sub_recipes:
+                print(sub_recipe.ingredients.all())
         return context
     
 
 class BaseViewForDataUpdate(BaseRecipeView):
+    """
+    Base view to handle create and update operation on recipes.
+    """
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        ingredient_form_set = inlineformset_factory(Recipe, RecipeIngredient, form=RecipeIngredientForm, extra=1,
-                                                    can_delete=False)
-        step_form_set = inlineformset_factory(Recipe, RecipeStep, form=RecipeStepForm, extra=1, can_delete=False)
+        extra_formset_count = 0
+        if isinstance(self, RecipeCreateView):
+            extra_formset_count = 1
+        ingredient_form_set = inlineformset_factory(Recipe, RecipeIngredient, form=RecipeIngredientForm, extra=extra_formset_count,
+                                                    can_delete=True)
+        step_form_set = inlineformset_factory(Recipe, RecipeStep, form=RecipeStepForm, extra=extra_formset_count, can_delete=True)
         if self.request.POST:
             context['ingredient_formset'] = ingredient_form_set(self.request.POST, instance=self.object, prefix='ingredients')
             context['step_formset'] = step_form_set(self.request.POST, instance=self.object, prefix='steps')
@@ -74,38 +92,61 @@ class BaseViewForDataUpdate(BaseRecipeView):
     
     def form_valid(self, form):
         form.instance.author = self.request.user
-        self.object = form.save()
+        self.object = form.save(commit=False)
+        # Ingredient formset handling
+        context = self.get_context_data()
+        ingredient_formset = context['ingredient_formset']
+        step_formset = context['step_formset']
+
+        if ingredient_formset.is_valid() and step_formset.is_valid():
+            self.object.save()
+            ingredient_formset.save()  
+            step_formset.save()
+        else:
+            print("Ingredient Formset Errors:", ingredient_formset.errors)
+            print("Step Formset Errors:", step_formset.errors)
+            return self.form_invalid(form)
+        
+        return super().form_valid(form)
+
+class RecipeCreateView(BaseViewForDataUpdate, CreateView):
+    """
+    View to create recipes.
+    """
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
         sub_recipes = form.cleaned_data.get('sub_recipes')
         if sub_recipes:
             for sub_recipe in  sub_recipes:
                 RecipeSubRecipe.objects.create(recipe=self.object,
                                                sub_recipe=sub_recipe)
-        # Ingredient formset handling
-        context = self.get_context_data()
-        ingredient_formset = context['ingredient_formset']
-        if ingredient_formset.is_valid():
-            ingredient_formset.save()
-        else:
-            return self.form_invalid(form)
-
-        # Step formset handling
-        step_formset = context['step_formset']
-        if step_formset.is_valid():
-            step_formset.save()
-        else:
-            return self.form_invalid(form)
-        
-
-        return super().form_valid(form)
-
-class RecipeCreateView(BaseViewForDataUpdate, CreateView):
-    pass
+        return response
 
 class RecipeUpdateView(BaseViewForDataUpdate, UpdateView):
+    """
+    View to update recipes.
+    """
+    
     template_name = 'recipes/recipe_form.html'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        sub_recipes = form.cleaned_data.get('sub_recipes')
+        if sub_recipes:
+            self.intermediate_table.objects.filter(recipe=self.object).delete()
+            for sub_recipe in  sub_recipes:
+                RecipeSubRecipe.objects.create(recipe=self.object,
+                                               sub_recipe=sub_recipe)
+        return response
+        
 
 
 class RecipeDeleteView(BaseRecipeView, DeleteView):
+    """
+    View to delete recipes.
+    """
+
     success_url = reverse_lazy('home')
 
 
@@ -179,7 +220,7 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['steps'] = self.object.sub_steps.order_by('order')
-        context['ingredients'] = self.object.ingredients.all()
+        context['ingredients'] = self.object.sub_ingredients.all()
 
         return context
 
