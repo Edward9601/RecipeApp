@@ -5,10 +5,9 @@
 {% block content %}
   <div class="container">
     
-    <form method="POST" autocomplete="off">
+    <form method="POST" action="{% url 'delete_sub_recipe' object.pk %}" autocomplete="off">
       {% csrf_token %}
       <fieldset>
-        {{ form|crispy }}
         <legend class="mb-4">Are you sure you want to delete {{object}}</legend>
       </fieldset>
       <div class="form-group py-3">

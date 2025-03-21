@@ -10,7 +10,7 @@
             <div class="card p-3">
                 <h2>Ingredients</h2>
                 <ul>
-                    {% for ingredient in ingredients %}
+                    {% for ingredient in object.sub_ingredients.all %}
                         {% if ingredient.measurement%}
                             <li>{{ ingredient.quantity }} {{ ingredient.measurement }} {{ ingredient.name }}</li>
                         {% else %}
@@ -27,7 +27,7 @@
             <div class="card p-3">
                 <h2>Steps</h2>
                 <ol>
-                    {% for step in steps %}
+                    {% for step in object.sub_steps.all %}
                         <li>{{ step.description }}</li>
                     {% empty %}
                         <li>No steps added yet.</li>

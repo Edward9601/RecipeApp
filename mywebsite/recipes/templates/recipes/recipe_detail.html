@@ -28,7 +28,7 @@
             <div class="card p-3">
                 <h2>Ingredients</h2>
                 <ul>
-                    {% for ingredient in ingredients %}
+                    {% for ingredient in object.ingredients.all %}
                         {% if ingredient.measurement%}
                             <li>{{ ingredient.quantity }} {{ ingredient.measurement }} {{ ingredient.name }}</li>
                         {% else %}
@@ -42,9 +42,9 @@
                     <h3 class="mt-3">Sub-Recipe Ingredients</h3>
                     {% for sub_recipe in object.sub_recipes.all %}
                         <div class="mt-2">
-                            <h5><strong>{{ sub_recipe.title }}</strong></h5>
+                            <h5><strong><a href="{% url 'sub_recipes_detail' sub_recipe.id %}">{{ sub_recipe.title }}<a/></strong></h5>
                             <ul>
-                                {% for ingredient in sub_recipe.ingredients.all %}
+                                {% for ingredient in sub_recipe.sub_ingredients.all %}
                                     {% if ingredient.measurement %}
                                         <li>{{ ingredient.quantity }} {{ ingredient.measurement }} {{ ingredient.name }}</li>
                                     {% else %}
@@ -64,7 +64,7 @@
             <div class="card p-3">
                 <h2>Steps</h2>
                 <ol>
-                    {% for step in steps %}
+                    {% for step in object.steps.all %}
                         <li>{{ step.description }}</li>
                     {% empty %}
                         <li>No steps added yet.</li>
@@ -74,7 +74,7 @@
                     <h3 class="mt-3">Sub-Recipe Steps</h3>
                     {% for sub_recipe in object.sub_recipes.all %}
                         <div class="mt-2">
-                            <h5><strong>{{ sub_recipe.title }}</strong></h5>
+                            <h5><strong><a href="{% url 'sub_recipes_detail' sub_recipe.id %}">{{ sub_recipe.title }}</a></strong></h5>
                             <ul>
                                 {% for sub_step in sub_recipe.sub_steps.all %}
                                     <li>{{ sub_step.description }}</li>
