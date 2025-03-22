@@ -36,6 +36,18 @@
             </div>
         </div>
     </div>
+    {% if object.main_recipes.all %}
+        <div class="col-md-6 p-2">
+            <h4>Used in:</h4>
+            <ul>
+                {% for recipe in object.main_recipes.all %}
+                    <li><a href="{% url 'detail' recipe.id %}" >{{ recipe.title }}</a></li>
+                {% empty %}   
+                {% endfor %}
+            <ul>
+        </div>
+    {% endif %}
+
 
     <div class="row mt-4">
         <div class="col text-center">

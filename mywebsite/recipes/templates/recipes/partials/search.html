@@ -1,9 +1,45 @@
-<input
-    name="search_text"
-    type="text"
-    value="{{search_text}}"
-    placeholder="Title search"
-    hx-get="{% url search_url %}"
-    hx-target="#results"
-    hx-trigger="input delay:0.3s"
->
+<div class="btn-group dropend">
+    <input
+        id="searchBar"
+        name="search_text"
+        type="text"
+        value="{{search_text}}"
+        placeholder="Title search"
+        hx-get="{% url search_url %}"
+        hx-target="#results"
+        hx-trigger="input delay:0.3s"
+        hx-vals='js:{searchType: "title"}'> <!-- By default title search -->
+
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+        Filter by: Title
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <li><a class="dropdown-item" onclick="hadleChangeFilter(event, 'Title')">Title</a></li>
+        <li><a class="dropdown-item" onclick="hadleChangeFilter(event, 'Ingredient')">Ingredient</a></li>
+    </ul>
+  </div>
+
+  <script>
+    function hadleChangeFilter(event, searchType){
+        let dropdownButton = document.getElementById("dropdownMenuButton");
+        let parts = dropdownButton.textContent.split(":");
+        const cipitalSearch = capitalize(parts[1])
+        if(cipitalSearch != searchType){
+            let search = document.getElementById("searchBar");
+            dropdownButton.textContent = `Filter by: ${searchType}`;
+            search.placeholder = `${searchType} search`;
+            search.setAttribute("hx-vals", `js:{searchType: "${searchType}"}`);
+            htmx.process(search);
+            const searchValue = search.value;
+            if (searchValue != null && searchValue != undefined && searchValue != ''){
+                htmx.trigger(search, 'input'); // if user already typed something trigger search
+            }
+        }
+
+    function capitalize(text)
+    {
+        return text && String(text[0]).toUpperCase() + String(text).slice(1);
+    }
+    }
+
+  </script>

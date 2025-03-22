@@ -7,9 +7,7 @@
                         {% endif %}
                         <div class="card-body">
                             <a href="{% url 'detail' recipe.pk %}"  class="card-title"><h5>{{ recipe.title }}</h5></a>
-                            <h6 class="card-subtitle mb-2 text-muted">Created by: {{ recipe.author }}</h6>
                             <p class="card-text">{{ recipe.description| truncatechars:200 }}</p>
-                            <h6 class="card-subtitle mb-2 text-muted">Created on: {{ recipe.created_at }}</h6>
                         </div>
                     </div>
                 </div>
