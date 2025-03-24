@@ -1,6 +1,7 @@
 from django.forms import inlineformset_factory
 from django import forms
-from .models import Recipe, RecipeIngredient, SubRecipeIngredient, SubRecipeStep, RecipeStep, RecipeSubRecipe, SubRecipe
+from .models.recipe_models import Recipe, RecipeIngredient, RecipeStep, RecipeSubRecipe
+from .models.sub_recipe_models import SubRecipeIngredient, SubRecipeStep, SubRecipe
 from .forms import RecipeIngredientForm, RecipeStepForm, RecipeForm, SubRecipeForm, SubRecipeIngredientForm, \
     SubRecipeStepForm
 
@@ -30,7 +31,7 @@ class RecipeListView(BaseRecipeView, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['search_url'] = 'title_search'
+        context['search_url'] = 'recipe_search'
         return context
 
     def get(self, request, *args, **kwargs):
@@ -44,8 +45,10 @@ class RecipeListView(BaseRecipeView, ListView):
         if search:
             if search_type.lower() == 'title':
                 recipes = self.model.objects.filter(title__icontains=search)
-            else:
+            if search_type.lower() == 'ingredients':
                 recipes = self.model.objects.filter(ingredients__name__icontains=search).distinct()
+            else:
+                pass # TODO add 400 response
         else:
             recipes = self.model.objects.all()
         return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
@@ -177,7 +180,7 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['search_url'] = 'sub_recipe_title_search'
+        context['search_url'] = 'sub_recipe_search'
         return context
 
     def get(self, request, *args, **kwargs):
@@ -241,7 +244,6 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.object = self.model.objects.prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
-
         return context
 
 

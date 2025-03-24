@@ -1,5 +1,6 @@
 from django.contrib import admin
-from . import models
+from .models.recipe_models import Recipe
+from .models.sub_recipe_models import SubRecipe
 
-admin.site.register(models.Recipe)
-admin.site.register(models.SubRecipe)
+admin.site.register(Recipe)
+admin.site.register(SubRecipe)
