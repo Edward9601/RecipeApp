@@ -5,7 +5,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 import os
 from .sub_recipe_models import SubRecipe
-from .base_models import BaseRecipe, Ingredient, Step, MEASUREMENT_CHOICES
+from .base_models import BaseRecipe, Ingredient, Step
 
 
 class Recipe(BaseRecipe):
@@ -14,13 +14,11 @@ class Recipe(BaseRecipe):
     sub_recipes = models.ManyToManyField('SubRecipe', through='RecipeSubRecipe',
                                          related_name='main_recipes', blank=True)
     
+    
 
 class RecipeSubRecipe(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='linked_recipes')
     sub_recipe = models.ForeignKey(SubRecipe, on_delete=models.CASCADE, related_name='linked_sub_recipes')
-    specific_notes = models.TextField(blank=True, null=True) # not used yet
-    sub_recipe_quantity = models.CharField(max_length=20, null=True, blank=True) # not used yet
-    sub_recipe_measurement = models.CharField(max_length=50, choices=MEASUREMENT_CHOICES, null=True, blank=True) # not used yet
 
     class Meta:
         constraints = [
