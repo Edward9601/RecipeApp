@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from ..models.recipe_models import Recipe, RecipeSubRecipe, RecipeStep, RecipeIngredient
 from ..models.sub_recipe_models import SubRecipe
 from django.views.generic import CreateView
@@ -7,7 +6,7 @@ from ..forms.sub_recipe_forms import SubRecipeForm
 from django.forms import inlineformset_factory
 from django import forms
 
-class BaseRecipeView(LoginRequiredMixin):
+class BaseRecipeView():
     """
     Base view for recipes to extend
     """
@@ -67,6 +66,6 @@ class BaseViewForDataUpdate(BaseRecipeView):
         return super().form_valid(form)
     
 
-class BaseSubRecipeView(LoginRequiredMixin):
+class BaseSubRecipeView():
         model = SubRecipe
         form_class = SubRecipeForm

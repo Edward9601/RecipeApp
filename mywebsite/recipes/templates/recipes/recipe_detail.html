@@ -29,11 +29,11 @@
                 <h2>Ingredients</h2>
                 <ul>
                     {% for ingredient in object.ingredients.all %}
-                        {% if ingredient.measurement%}
-                            <li>{{ ingredient.quantity }} {{ ingredient.measurement }} {{ ingredient.name }}</li>
-                        {% else %}
-                            <li>{{ ingredient.quantity }} {{ ingredient.name }}</li>
-                        {% endif %}
+                    <li>
+                        {{ ingredient.quantity|default_if_none:"" }} 
+                        {{ ingredient.measurement|default_if_none:"" }} 
+                        {{ ingredient.name }}
+                    </li>
                     {% empty %}
                         <li>No ingredients added yet.</li>
                     {% endfor %}

@@ -29,6 +29,13 @@ class RecipeSubRecipe(models.Model):
 class RecipeIngredient(Ingredient):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='ingredients')
 
+
+    def __str__(self) -> str:
+        quantity_display = self.quantity if self.quantity not in [None, 'None'] else ''
+        measurement_display = self.measurement if self.measurement not in [None, 'None'] else ''
+        return f'{quantity_display} {measurement_display} {self.name}'.strip()
+    
+
 class RecipeStep(Step):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='steps')
 

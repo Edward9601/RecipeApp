@@ -32,3 +32,8 @@
 .dropdown-menu {
     border: none;
 }
+
+.selected-filter {
+    background-color: #6c757d;
+    color: #000;
+}

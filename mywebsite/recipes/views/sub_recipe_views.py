@@ -31,13 +31,18 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
             if search_type.lower() == 'title':
                 sub_recipes = self.model.objects.filter(title__icontains=search)
             else:
-                sub_recipes = self.model.objects.filter(sub_ingredients__name__icontains=search).distinct()
+                sub_ingredients_to_search = [ingredient.strip() for ingredient in search.split(',') if ingredient.strip()]
+
+                query_set = self.model.objects.all()
+                for ingredient in sub_ingredients_to_search:
+                    query_set = query_set.filter(sub_ingredients__name__icontains=ingredient)
+                sub_recipes = query_set.distinct()
         else:
             sub_recipes = self.model.objects.all()
         return render(request, 'recipes/partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
 
 
-class SubRecipeCreateView(BaseSubRecipeView, CreateView):
+class SubRecipeCreateView(LoginRequiredMixin, BaseSubRecipeView, CreateView):
     template_name = 'recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
@@ -82,7 +87,7 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
         return context
 
 
-class SubRecipeUpdateView(BaseSubRecipeView, UpdateView):
+class SubRecipeUpdateView(LoginRequiredMixin, BaseSubRecipeView, UpdateView):
     template_name = 'recipes/recipe_form.html'
 
     def get_context_data(self, **kwargs):

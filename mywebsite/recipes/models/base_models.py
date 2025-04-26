@@ -8,12 +8,13 @@ MEASUREMENT_CHOICES = [
     ('gram', 'Gram'),
     ('tbs', 'Tablespoon'),
     ('tsp', 'Teaspoon'),
-    ('Milliliter', 'Milliliter'),
+    ('milliliter', 'Milliliter'),
     ('liter', 'Liter'),
-    ('Pound', 'Pound'),
+    ('pound', 'Pound'),
     ('bag', 'Bag'),
     ('piece(s)', 'Piece(s)'),
-    ('slice(s)', 'Slices')
+    ('slice(s)', 'Slices'),
+    
 ]
 
 class BaseRecipe(models.Model):
@@ -41,9 +42,9 @@ class Ingredient(models.Model):
         abstract = True
 
     def __str__(self) -> str:
-        quantity_display = f'{self.quantity}' if self.quantity else ''
-        measurement_display = f'{self.measurement}' if self.measurement else ''
-        return f'{quantity_display}{measurement_display}{self.name}'.strip()
+        quantity_display = self.quantity if self.quantity not in [None, 'None'] else ''
+        measurement_display = self.measurement if self.measurement not in [None, 'None'] else ''
+        return f'{quantity_display} {measurement_display} {self.name}'.strip()
 
 class Step(models.Model):
     order = models.PositiveIntegerField()

@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import render
+from django.http import JsonResponse
 
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
 from ..models.recipe_models import RecipeSubRecipe, Recipe
@@ -27,15 +28,23 @@ class RecipeListView(BaseRecipeView, ListView):
     def search(self, request):
         search = request.GET.get('search_text')
         search_type = request.GET.get('searchType')
+
         if search:
             if search_type.lower() == 'title':
                 recipes = self.model.objects.filter(title__icontains=search)
-            if search_type.lower() == 'ingredients':
-                recipes = self.model.objects.filter(ingredients__name__icontains=search).distinct()
+            elif search_type.lower() == 'ingredient':
+                ingredients_to_search = [ingredient.strip() for ingredient in search.split(',') if ingredient.strip()]
+
+                query_set = self.model.objects.all()
+                for ingredient in ingredients_to_search:
+                    query_set = query_set.filter(ingredients__name__icontains=ingredient)
+                recipes = query_set.distinct()
             else:
-                pass # TODO add 400 response
+                return JsonResponse({'error': 'Invalid search type'}, status=400)
         else:
             recipes = self.model.objects.all()
+
+        print(recipes)  # Debugging: Check what is being returned
         return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
 
 
@@ -50,7 +59,7 @@ class RecipeDetailView(BaseRecipeView, DetailView):
         return context
     
 
-class RecipeCreateView(BaseViewForDataUpdate, CreateView):
+class RecipeCreateView(LoginRequiredMixin, BaseViewForDataUpdate, CreateView):
     """
     View to create recipes.
     """
@@ -65,7 +74,7 @@ class RecipeCreateView(BaseViewForDataUpdate, CreateView):
         return response
 
 
-class RecipeUpdateView(BaseViewForDataUpdate, UpdateView):
+class RecipeUpdateView(LoginRequiredMixin, BaseViewForDataUpdate, UpdateView):
     """
     View to update recipes.
     """
