@@ -10,7 +10,7 @@ from ..models.sub_recipe_models import SubRecipeIngredient, SubRecipeStep, SubRe
 from ..forms.sub_recipe_forms import SubRecipeIngredientForm, SubRecipeStepForm
 
 class SubRecipeListView(BaseSubRecipeView, ListView):
-    template_name = 'recipes/sub_recipe.html'
+    template_name = 'sub_recipes/sub_recipe.html'
     context_object_name = 'sub_recipes'
 
     def get_context_data(self, **kwargs):
@@ -43,7 +43,7 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
 
 
 class SubRecipeCreateView(LoginRequiredMixin, BaseSubRecipeView, CreateView):
-    template_name = 'recipes/sub_recipe_form.html'
+    template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
     def get_context_data(self, **kwargs):
@@ -88,7 +88,7 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
 
 
 class SubRecipeUpdateView(LoginRequiredMixin, BaseSubRecipeView, UpdateView):
-    template_name = 'recipes/recipe_form.html'
+    template_name = 'sub_recipes/recipe_form.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

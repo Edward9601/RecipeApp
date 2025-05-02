@@ -4,7 +4,7 @@
 {% block content %}
   <div class="container">
     <h2>Login</h2>
-    <form method="POST">
+    <form method="POST" action="{% url 'login' %}">
       {% csrf_token %}
       {{ form|crispy }}
       <p> Don't an account yet? Create one <a href="/register"> Here</a>!</p>
