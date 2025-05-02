@@ -9,3 +9,12 @@ You can also filter recipes by title or ingredient names.
 - Add ordered steps to each recipe
 - Filter recipes by ingredient names
 - Clean and responsive UI
+
+
+## Tech Stack
+
+- Python 3
+- Django 4.x
+- PostgreSQL
+- Bootstrap5
+- HTML/HTMX/CSS/JS (frontend)
