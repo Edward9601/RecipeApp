@@ -19,3 +19,6 @@ class RecipeStepForm(forms.ModelForm):
     class Meta:
         model = RecipeStep
         fields = ['description', 'order']
+        widgets = {
+            'order': forms.HiddenInput()
+        }

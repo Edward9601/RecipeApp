@@ -23,8 +23,11 @@ class BaseViewForDataUpdate(BaseRecipeView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         extra_formset_count = 0
+        initial_data = [{}]
         if isinstance(self, CreateView):
             extra_formset_count = 1
+  
+
         ingredient_form_set = inlineformset_factory(Recipe, RecipeIngredient, form=RecipeIngredientForm,
                                                     extra=extra_formset_count,
                                                     can_delete=True)
@@ -61,7 +64,8 @@ class BaseViewForDataUpdate(BaseRecipeView):
             ingredient_formset.save()
             step_formset.save()
         else:
-            return super().form_invalid(form)
+            response = super().form_invalid(form)
+            return response
 
         return super().form_valid(form)
     

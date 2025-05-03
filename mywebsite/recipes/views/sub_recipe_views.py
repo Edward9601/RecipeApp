@@ -80,7 +80,7 @@ class SubRecipeCreateView(LoginRequiredMixin, BaseSubRecipeView, CreateView):
 
 
 class SubRecipeDetailView(BaseSubRecipeView, DetailView):
-
+    template_name = 'sub_recipes/subrecipe_detail.html'
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.object = self.model.objects.prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
@@ -131,5 +131,6 @@ class SubRecipeDeleteView(LoginRequiredMixin, DeleteView):
     """
     View to delete sub recipes, it doesn't inherite from the becase because form_class messes up with it's logic
     """
+    template_name = 'sub_recipes/subrecipe_confirm_delete.html'
     model = SubRecipe
     success_url = reverse_lazy('sub_recipes')

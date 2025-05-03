@@ -19,14 +19,27 @@
 <div id="step-formset">
     {% for form in step_formset %}
         <div class="step-form">
-            {{ form.as_p }}
+            <div>
+                {{ form.id }}
+                {{ form.order }}
+            </div>
+            <div>
+                {{ form.description.label_tag }} {{ form.description }}
+            </div>
         </div>
     {% endfor %}
 </div>
 <!-- Empty form (hidden initially) to serve as template for adding new forms -->
 <div id="empty-step-form" style="display: none;" class="hidden">
-    {{ step_formset.empty_form.as_p }}
-</div>
+    <div class="step-form">
+      <div>
+         {{ step_formset.empty_form.order }}
+      </div>
+      <div>
+        {{ step_formset.empty_form.description.label_tag }} {{ step_formset.empty_form.description }}
+      </div>
+    </div>
+  </div>
 <button id="add-step-button" type="button" onclick="addStepForm()">Add Step</button>
 
 
@@ -67,21 +80,32 @@
         let totalFormsInput = document.getElementById('id_steps-TOTAL_FORMS');
         let totalForms = parseInt(totalFormsInput.value, 10);
 
-        console.log(totalForms);
-        const currentSteps = document.getElementsByClassName('step-from');
-    
-        // Get the empty form template and clone and update the empty form
+        // Get the empty form template and clone it
         let emptyFormTemplate = document.getElementById('empty-step-form').cloneNode(true);
-
         emptyFormTemplate.setAttribute('class', 'step-form');
         emptyFormTemplate.removeAttribute('id');
+        emptyFormTemplate.style.removeProperty('display');
 
-        emptyFormTemplate.style.removeProperty('display');  // Make the cloned form visible
-        emptyFormTemplate.innerHTML = emptyFormTemplate.innerHTML.replace(/__prefix__/g, totalForms);
-    
+        // Replace __prefix__ with the current totalForms index
+        let newFormHTML = emptyFormTemplate.innerHTML.replace(/__prefix__/g, totalForms);
+
+        // Create a temporary container to modify HTML
+        let tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newFormHTML;
+
+        // Set the value of the order field to totalForms + 1
+        let orderInput = tempDiv.querySelector('input[name$="-order"]');
+        if (orderInput) {
+            orderInput.value = totalForms + 1;
+        }
+
+        // Update form's innerHTML
+        emptyFormTemplate.innerHTML = tempDiv.innerHTML;
+
+        // Append the updated form to the DOM
         formsetDiv.appendChild(emptyFormTemplate);
-    
+
         // Increment TOTAL_FORMS
         totalFormsInput.value = totalForms + 1;
-    }   
+    }
 </script>
