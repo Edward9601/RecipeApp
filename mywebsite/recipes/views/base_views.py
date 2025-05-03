@@ -26,6 +26,7 @@ class BaseViewForDataUpdate(BaseRecipeView):
         initial_data = [{}]
         if isinstance(self, CreateView):
             extra_formset_count = 1
+            initial_data = [{"order": 1}]
   
 
         ingredient_form_set = inlineformset_factory(Recipe, RecipeIngredient, form=RecipeIngredientForm,
@@ -39,7 +40,7 @@ class BaseViewForDataUpdate(BaseRecipeView):
             context['step_formset'] = step_form_set(self.request.POST, instance=self.object, prefix='steps')
         else:
             context['ingredient_formset'] = ingredient_form_set(instance=self.object, prefix='ingredients')
-            context['step_formset'] = step_form_set(instance=self.object, prefix='steps')
+            context['step_formset'] = step_form_set(instance=self.object, prefix='steps', initial=initial_data)
         return context
 
     def get_form(self, form_class=None):

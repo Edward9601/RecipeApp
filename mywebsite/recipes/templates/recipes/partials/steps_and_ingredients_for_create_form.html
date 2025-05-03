@@ -19,8 +19,8 @@
 <div id="step-formset">
     {% for form in step_formset %}
         <div class="step-form">
+            {{ form.id }}
             <div>
-                {{ form.id }}
                 {{ form.order }}
             </div>
             <div>
