@@ -4,7 +4,7 @@
 {% load crispy_forms_tags %}
 {% block content %}
   <div class="container">
-    <form method="POST" action="{% url 'delete' object.pk %}" autocomplete="off">
+    <form method="POST" action="{% url 'recipes:delete' object.pk %}" autocomplete="off">
       {% csrf_token %}
       <fieldset>
         <h1 class="mb-4">Are you sure you want to delete {{object}}?</h1>
@@ -15,7 +15,7 @@
 
     </form>
     <div class="border-top pt-3">
-      <a href="{% url 'home' %}">Cancel</a>
+      <a href="{% url 'recipes:home' %}">Cancel</a>
     </div>
   </div>
 {% endblock %}

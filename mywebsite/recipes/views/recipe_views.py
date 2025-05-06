@@ -17,7 +17,7 @@ class RecipeListView(BaseRecipeView, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['search_url'] = 'recipe_search'
+        context['search_url'] = 'recipes:recipe_search'
         return context
 
     def get(self, request, *args, **kwargs):

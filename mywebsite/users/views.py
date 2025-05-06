@@ -13,6 +13,8 @@ def register(request):
             messages.success(request, f'Account created for {username}!')
             return redirect('recipes/home')
     else:
+        if request.user.is_authenticated:
+            return redirect('recipes:home')
         form = UserRegistrationForm()
 
     # Ensure the form is rendered regardless of the request method or form validity

@@ -6,7 +6,7 @@
                             <img src="{{ recipe.picture.url }}" class="image">
                         {% endif %}
                         <div class="card-body">
-                            <a href="{% url 'detail' recipe.pk %}"  class="card-title"><h5>{{ recipe.title }}</h5></a>
+                            <a href="{% url 'recipes:detail' recipe.pk %}"  class="card-title"><h5>{{ recipe.title }}</h5></a>
                             <p class="card-text">{{ recipe.description| truncatechars:200 }}</p>
                         </div>
                     </div>

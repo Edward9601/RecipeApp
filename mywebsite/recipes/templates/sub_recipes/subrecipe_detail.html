@@ -41,7 +41,7 @@
             <h4>Used in:</h4>
             <ul>
                 {% for recipe in object.main_recipes.all %}
-                    <li><a href="{% url 'detail' recipe.id %}" >{{ recipe.title }}</a></li>
+                    <li><a href="{% url 'recipes:detail' recipe.id %}" >{{ recipe.title }}</a></li>
                 {% empty %}   
                 {% endfor %}
             <ul>
@@ -51,8 +51,8 @@
 
     <div class="row mt-4">
         <div class="col text-center">
-            <a class="btn btn-outline-info mx-2" href="{% url 'update_sub_recipe' object.id %}">Update</a>
-            <a class="btn btn-outline-danger mx-2" href="{% url 'delete_sub_recipe' object.id %}">Delete</a>
+            <a class="btn btn-outline-info mx-2" href="{% url 'recipes:update_sub_recipe' object.id %}">Update</a>
+            <a class="btn btn-outline-danger mx-2" href="{% url 'recipes:delete_sub_recipe' object.id %}">Delete</a>
         </div>
     </div>
 </div>

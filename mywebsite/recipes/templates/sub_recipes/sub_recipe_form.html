@@ -3,9 +3,9 @@
 {% load static %}
 {% block content %}
 <div class="container">
-    <form method="POST" action="{% if object %}{% url 'update_sub_recipe' object.id %}
+    <form method="POST" action="{% if object %}{% url 'recipes:update_sub_recipe' object.id %}
     {% else %}
-    {% url 'create_sub_recipe' %}{% endif %}" 
+    {% url 'recipes:create_sub_recipe' %}{% endif %}" 
      autocomplete="off" enctype="multipart/form-data">
      {% csrf_token %}
      {{ form|crispy }}
