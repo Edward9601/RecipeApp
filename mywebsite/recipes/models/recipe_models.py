@@ -6,7 +6,12 @@ import os
 from .sub_recipe_models import SubRecipe
 from .base_models import BaseRecipe, Ingredient, Step
 
-class Category(models.Model):
+"""
+When first migration is ran got to recipes/management/commands/populate_categories.py to see instractions 
+on how to prepopulate Category table with initial data.
+"""
+
+class Category(models.Model): 
     name = models.CharField(max_length=30)
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='sub_categories')
 
@@ -19,7 +24,7 @@ class Category(models.Model):
 class Recipe(BaseRecipe):
     description = models.TextField(blank=True, null=True)
     picture = models.ImageField(upload_to='recipes_pictures/', blank=True, null=True)
-    sub_recipes = models.ManyToManyField('SubRecipe', through='RecipeSubRecipe',
+    sub_recipes = models.ManyToManyField(SubRecipe, through='RecipeSubRecipe',
                                          related_name='main_recipes', blank=True)
     categories = models.ManyToManyField(Category, related_name='recipes')
     

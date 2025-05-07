@@ -2,8 +2,10 @@ from django.db import models
 
 from .base_models import BaseRecipe, Step, Ingredient
 
+#TODO consoder adding self refference to Recipe class, add indicator 
+# (true/fale) for subrecipe, and deleting this separate table
 
-class SubRecipe(BaseRecipe):
+class SubRecipe(BaseRecipe): 
     pass
 
 class SubRecipeIngredient(Ingredient):
