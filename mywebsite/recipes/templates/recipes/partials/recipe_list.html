@@ -3,7 +3,7 @@
                 <div class="col-md-4 mb-4">
                     <div class="card my-4">
                         {% if recipe.picture %}
-                            <img src="{{ recipe.picture.url }}" class="image">
+                            <img src="{{ recipe.get_thumbnail_url  }}" class="image" alt="{{ recipe.title }}">
                         {% endif %}
                         <div class="card-body">
                             <a href="{% url 'recipes:detail' recipe.pk %}"  class="card-title"><h5>{{ recipe.title }}</h5></a>

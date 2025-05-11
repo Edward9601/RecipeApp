@@ -68,7 +68,7 @@ class BaseViewForDataUpdate(BaseRecipeView):
             response = super().form_invalid(form)
             return response
 
-        return super().form_valid(form)
+        return self.object
     
 
 class BaseSubRecipeView():

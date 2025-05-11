@@ -1,11 +1,12 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
 from ..models.recipe_models import RecipeSubRecipe, Recipe
+
 
 class RecipeListView(BaseRecipeView, ListView):
     """
@@ -55,9 +56,9 @@ class RecipeDetailView(BaseRecipeView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.object = self.model.objects.prefetch_related('steps','ingredients', 'sub_recipes').get(pk=self.object.pk)
+        self.object = self.model.objects.prefetch_related('steps', 'ingredients', 'sub_recipes').get(pk=self.object.pk)
         return context
-    
+
 
 class RecipeCreateView(LoginRequiredMixin, BaseViewForDataUpdate, CreateView):
     """
@@ -65,13 +66,15 @@ class RecipeCreateView(LoginRequiredMixin, BaseViewForDataUpdate, CreateView):
     """
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+
         sub_recipes = form.cleaned_data.get('sub_recipes')
+        # calling base class to save model
+        BaseViewForDataUpdate.form_valid(self, form)
         if sub_recipes:
             for sub_recipe in sub_recipes:
                 RecipeSubRecipe.objects.create(recipe=self.object,
                                                sub_recipe=sub_recipe)
-        return response
+        return redirect(self.object.get_absolute_url())
 
 
 class RecipeUpdateView(LoginRequiredMixin, BaseViewForDataUpdate, UpdateView):
@@ -85,11 +88,12 @@ class RecipeUpdateView(LoginRequiredMixin, BaseViewForDataUpdate, UpdateView):
         form = super().get_form(form_class)
 
         if self.object.sub_recipes.all():
-            form.fields['sub_recipes'].initial = self.object.sub_recipes.all() # ensures that previosly selected sub recipes appear as checked.
+            form.fields[
+                'sub_recipes'].initial = self.object.sub_recipes.all()  # ensures that previosly selected sub recipes appear as checked.
         return form
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        BaseViewForDataUpdate.form_valid(self, form)
         new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
         current_sub_recipes = set(self.object.sub_recipes.all())
 
@@ -100,12 +104,14 @@ class RecipeUpdateView(LoginRequiredMixin, BaseViewForDataUpdate, UpdateView):
             self.intermediate_table.objects.filter(recipe=self.object, sub_recipe__in=to_remove).delete()
         if sub_recipes_to_add:
             RecipeSubRecipe.objects.bulk_create([RecipeSubRecipe(recipe=self.object,
-                                               sub_recipe=sub_recipe) for sub_recipe in sub_recipes_to_add])
-        return response
+                                                                 sub_recipe=sub_recipe) for sub_recipe in
+                                                 sub_recipes_to_add])
+        return redirect(self.get_success_url())
+
 
 class RecipeDeleteView(LoginRequiredMixin, DeleteView):
     """
     View to delete recipes.
     """
     model = Recipe
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('recipes:home')

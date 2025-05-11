@@ -31,7 +31,7 @@ class BaseRecipe(models.Model):
         return self.title
 
     def get_absolute_url(self):
-        return reverse('detail', kwargs={'pk': self.pk})
+        return reverse('recipes:detail', kwargs={'pk': self.pk})
 
 class Ingredient(models.Model):
     name = models.CharField(max_length=70)
