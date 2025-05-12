@@ -52,11 +52,11 @@ class Recipe(BaseRecipe):
             exif = img._getexif()
             if exif is not None:
                 orientation_value = exif.get(orientation, None)
-                if orientation_value == 3:
+                if orientation_value == 3: # Upside down (rotate 180°)
                     img = img.rotate(180, expand=True)
-                elif orientation_value == 6:
+                elif orientation_value == 6: # Rotated 90° Clockwise
                     img = img.rotate(270, expand=True)
-                elif orientation_value == 8:
+                elif orientation_value == 8: # Rotated 90° Counterclockwise
                     img = img.rotate(90, expand=True)
         except Exception as e:
             print(f'Error was encountered while trying to fix image orientation: {e}')
@@ -72,7 +72,8 @@ class Recipe(BaseRecipe):
                 original_data = self.picture.read()
                 current_hash = hash(original_data)
 
-                if not hasattr(self, '_last_picture_hash') or self._last_picture_hash != current_hash:
+                if not hasattr(self, '_last_picture_hash') or self._last_picture_hash != current_hash: # Verifying 
+                    _, ext = os.path.splitext(self.picture.name)
 
                     safe_title = self.title.replace(" ", "_")
 
