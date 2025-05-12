@@ -10,8 +10,10 @@
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
         crossorigin="anonymous"
     />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script type="text/javascript" src="{% static 'js/htmx.min.js' %}" defer></script>
     <link rel="stylesheet" href="{% static 'recipes/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <title>{% block title %}My amazing site{% endblock %}</title>
 </head>
 
@@ -50,7 +52,39 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS and dependencies (dev versions to speed up development)-->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>About DailyRecipes</h5>
+                    <p>Your go-to platform for discovering and sharing amazing recipes. Create, share, and explore culinary delights with our community.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="footer-links">
+                        <li><a href="{% url 'recipes:home' %}">Home</a></li>
+                        <li><a href="{% url 'recipes:sub_recipes' %}">Sub Recipes</a></li>
+                        <li><a href="{% url 'recipes:create' %}">Create Recipe</a></li>
+                        <li><a href="{% url 'recipes:create_sub_recipe' %}">Create Sub Recipe</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Connect With Us</h5>
+                    <div class="social-links">
+                        <a href="#" target="_blank"><i class="fab fa-facebook"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-twitter"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="#" target="_blank"><i class="fab fa-pinterest"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; {% now "Y" %} DailyRecipes. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.7.1.js"
             integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
             crossorigin="anonymous"></script> 
