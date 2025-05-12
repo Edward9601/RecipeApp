@@ -1,5 +1,4 @@
 name: Django CI
-
 on:
   push:
     branches: [ "main" ]
@@ -8,7 +7,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -28,7 +26,8 @@ jobs:
     - name: Run Tests
       working-directory: mywebsite
       env:
-        DJANGO_ENV: production
+        DJANGO_ENV: development
+        ENGINE: ${{ secrets.DB_ENGINE}}
         DB_NAME: ${{ secrets.DB_NAME }}
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         HOST: ${{ secrets.HOST }}
