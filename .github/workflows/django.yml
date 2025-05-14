@@ -1,9 +1,9 @@
-name: Django CI
-on:
+name: Django CI/CD
+on: # Triggering events
   push:
-    branches: [ "main" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main, develop ]
 
 jobs:
   build:
@@ -12,7 +12,17 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: ["3.11"]
-
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: github-actions
+        options: >-
+          --health-cmd pg_isready
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -26,6 +36,7 @@ jobs:
     - name: Run Tests
       working-directory: mywebsite
       env:
+        GITHUB_WORKFLOW: true
         DJANGO_ENV: development
         ENGINE: ${{ secrets.DB_ENGINE}}
         DB_NAME: ${{ secrets.DB_NAME }}
@@ -36,3 +47,4 @@ jobs:
         USER: ${{ secrets.USER }}
       run: |
         python manage.py test
+
