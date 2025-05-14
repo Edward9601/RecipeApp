@@ -1,9 +1,9 @@
 name: Django CI/CD
-on:
+on: # Triggering events
   push:
-    branches: [ "main", "develop" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ main, develop ]
 
 jobs:
   build:
@@ -26,6 +26,7 @@ jobs:
     - name: Run Tests
       working-directory: mywebsite
       env:
+        GITHUB_WORKFLOW: true
         DJANGO_ENV: development
         ENGINE: ${{ secrets.DB_ENGINE}}
         DB_NAME: ${{ secrets.DB_NAME }}
