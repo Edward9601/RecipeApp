@@ -23,8 +23,6 @@ jobs:
           POSTGRES_DB: github-actions
         options: >-
           --health-cmd pg_isready
-          --health-# filepath: .github/workflows/django.yml
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
