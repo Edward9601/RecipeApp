@@ -1,60 +1,12 @@
-<div class="btn-group dropend">
-    <input
-        id="search_bar"
-        name="search_text"
-        type="text"
-        value="{{search_text}}"
-        placeholder="Title search"
-        hx-get="{% url search_url %}"
-        hx-target="#results"
-        hx-trigger="input delay:0.3s"
-        hx-vals='js:{searchType: document.getElementById("dropdownMenuButton").textContent.split(":")[1].trim(), search_text: normalizeSearchInput()}'> <!-- By default title search -->
-
-    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-        Filter by: Title
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-        <li><a id="filter-title" class="dropdown-item" onclick="hadleChangeFilter('Title')">Title</a></li>
-        <li><a id="filter-ingredient" class="dropdown-item" onclick="hadleChangeFilter('Ingredient')">Ingredient</a></li>
-    </ul>
-  </div>
-   <!-- Add an event listener to htmx response to handle JsonResponse object-->
-  <script>
-    function hadleChangeFilter(searchType){
-        let dropdownButton = document.getElementById("dropdownMenuButton");
-        let parts = dropdownButton.textContent.split(":");
-        const cipitalSearch = capitalize(parts[1])
-        if(cipitalSearch != searchType){
-            let search = document.getElementById("search_bar");
-            dropdownButton.textContent = `Filter by: ${searchType}`;
-            htmx.process(search);
-            const searchValue = search.value;
-            if (searchValue != null && searchValue != undefined && searchValue != ''){
-                htmx.trigger(search, 'input'); // if user already typed something trigger search
-            }
-            // Higlight selected filter method
-            document.getElementById("filter-title").classList.remove("selected-filter");
-            document.getElementById("filter-ingredient").classList.remove("selected-filter");
-
-            if(searchType == "Title"){
-                document.getElementById("filter-title").classList.add("selected-filter");
-            }
-            else{
-                document.getElementById("filter-ingredient").classList.add("selected-filter");
-            }
-        }
-        
-    }
-    function capitalize(text)
-    {
-        return text && String(text[0]).toUpperCase() + String(text).slice(1);
-    }
-
-    function normalizeSearchInput() {
-        let searchField = document.getElementById("search_bar");
-        return searchField.value
-            .trim()
-            .replace(/[,;\s]+/g, ","); // Replace commas, semicolons, and spaces with a single comma
-    }
-
-  </script>
+<form hx-get="{% url search_url %}" hx-target="#results" hx-trigger="submit" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="search_text" class="form-control" placeholder="Search recipes...">
+        <div class="input-group-append">
+            <select name="searchType" class="form-control">
+                <option value="title">Title</option>
+                <option value="ingredient">Ingredient</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+    </div>
+</form>
