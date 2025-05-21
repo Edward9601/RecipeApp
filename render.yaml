@@ -2,6 +2,7 @@ services:
   - type: web
     name: mywebsite
     runtime: python
+    rootDir: src
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn mywebsite.wsgi
     envVars:
