@@ -1,9 +1,12 @@
 services:
   - type: web
-    name: mywebsite
+    name: RecipeApp
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn mywebsite.wsgi
+    region: virginia
+    autoDeployTriggeer: checksPass
     envVars:
       - key: DJANGO_SECRET_KEY
         sync: false
