@@ -7,8 +7,8 @@ from django.core.files.storage import default_storage
 import uuid
 import os
 
-from PIL import Image, ExifTags
 from io import BytesIO
+from PIL import Image, ExifTags
 
 from .sub_recipe_models import SubRecipe
 from .base_models import BaseRecipe, Ingredient, Step
@@ -38,9 +38,9 @@ class Recipe(BaseRecipe):
 
     def get_thumbnail_url(self):
         if self.picture:
-            filename = self.picture.name  # e.g. recipes_pictures_originals/One-Pan_Tuscan_Chicken_abc.jpeg
+            filename = self.picture.name  # e.g. recipes_pictures_originals/One-Pan_Tuscan_Chicken.jpeg
             thumb_name = filename.replace('recipes_pictures_originals/', 'recipes_pictures_thumbs_medium/')
-            return default_storage.url(thumb_name)  # ✅ signed URL from storage backend
+            return default_storage.url(thumb_name)  # retuning signed URL from storage backend
         return ''
     
 
@@ -67,7 +67,7 @@ class Recipe(BaseRecipe):
         # Resize image only if it exists and is new or changed
         if self.picture and not kwargs.get('raw', False):
             try:
-                # Read image content
+                # Just in case reset the cursor to the beginning of the file
                 self.picture.seek(0)
                 original_data = self.picture.read()
                 current_hash = hash(original_data)
