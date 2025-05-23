@@ -17,5 +17,4 @@ def register(request):
             return redirect('recipes:home')
         form = UserRegistrationForm()
 
-    # Ensure the form is rendered regardless of the request method or form validity
     return render(request, 'registration/register.html', {'form': form})
