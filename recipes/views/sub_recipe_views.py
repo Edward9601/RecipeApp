@@ -3,6 +3,9 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy
 from django.shortcuts import render
 
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+
 from django.forms import inlineformset_factory
 from .base_views import BaseSubRecipeView
 
@@ -17,13 +20,15 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
         context = super().get_context_data(**kwargs)
         context['search_url'] = 'recipes:sub_recipe_search'
         return context
-
+    
+    @method_decorator(cache_page(60 * 15))
     def get(self, request, *args, **kwargs):
         if request.htmx:
             return self.search(request)
         else:
             return super().get(request, *args, **kwargs)
 
+    @method_decorator(cache_page(60 * 15))
     def search(self, request):
         search = request.GET.get('search_text')
         search_type = request.GET.get('searchType')
@@ -81,6 +86,8 @@ class SubRecipeCreateView(LoginRequiredMixin, BaseSubRecipeView, CreateView):
 
 class SubRecipeDetailView(BaseSubRecipeView, DetailView):
     template_name = 'sub_recipes/subrecipe_detail.html'
+
+    @method_decorator(cache_page(60 * 60))
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.object = self.model.objects.prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
