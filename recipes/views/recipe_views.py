@@ -29,7 +29,9 @@ class RecipeListView(BaseRecipeView, ListView):
         if request.htmx:
             return self.search(request)
         return super().get(request, *args, **kwargs)
+    
 
+    @method_decorator(cache_page(60 * 15))  # Cache the view for 15 minutes
     def search(self, request):
         search = request.GET.get('search_text')
         search_type = request.GET.get('searchType')
@@ -58,6 +60,7 @@ class RecipeDetailView(BaseRecipeView, DetailView):
     View for recipe details, also displays related recipes
     """
 
+    @method_decorator(cache_page(60 * 60))  # Cache the view for 1 hour
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.object = self.model.objects.prefetch_related('steps', 'ingredients', 'sub_recipes').get(pk=self.object.pk)
