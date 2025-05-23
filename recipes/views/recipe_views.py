@@ -3,6 +3,9 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
 from ..models.recipe_models import RecipeSubRecipe, Recipe
@@ -20,7 +23,8 @@ class RecipeListView(BaseRecipeView, ListView):
         context = super().get_context_data(**kwargs)
         context['search_url'] = 'recipes:recipe_search'
         return context
-
+    
+    @method_decorator(cache_page(60 * 15))  # Cache the view for 15 minutes
     def get(self, request, *args, **kwargs):
         if request.htmx:
             return self.search(request)
