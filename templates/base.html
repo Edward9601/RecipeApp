@@ -31,14 +31,9 @@
             </ul>
         </div>
         {% if user.is_authenticated %}
-            <form action="{% url 'logout' %}" method="POST">
+            <form action="{% url 'logout' %}" method="POST" class="d-inline">
                 {% csrf_token %}
-                <button type="submit">Logout</button>
-            </form>
-        {% else %}
-            <form action="{% url 'login' %}" method="POST">
-                {% csrf_token %}
-                <button type="submit">Login</button>
+                <button type="submit" class="btn btn-outline-danger">Logout</button>
             </form>
         {% endif%}
     </nav>

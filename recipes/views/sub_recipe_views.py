@@ -3,16 +3,18 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy
 from django.shortcuts import render
 
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
-
+from django.core.cache import cache
 from django.forms import inlineformset_factory
+
 from .base_views import BaseSubRecipeView
 
 from ..models.sub_recipe_models import SubRecipeIngredient, SubRecipeStep, SubRecipe
 from ..forms.sub_recipe_forms import SubRecipeIngredientForm, SubRecipeStepForm
 
 class SubRecipeListView(BaseSubRecipeView, ListView):
+    """
+    View to display all sub recipes, it also handles search functionality.
+    """
     template_name = 'sub_recipes/sub_recipe.html'
     context_object_name = 'sub_recipes'
 
@@ -21,14 +23,21 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
         context['search_url'] = 'recipes:sub_recipe_search'
         return context
     
-    @method_decorator(cache_page(60 * 15))
+    
     def get(self, request, *args, **kwargs):
         if request.htmx:
             return self.search(request)
-        else:
-            return super().get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
+    
+    def get_queryset(self):
+        cache_key = 'sub_recipe_list_queryset'
+        cached_queryset_data = cache.get(cache_key)
+        if cached_queryset_data is None:
+            queryset = super().get_queryset()
+            cache.set(cache_key, queryset, timeout=60 * 15)
+            return queryset
+        return cached_queryset_data
 
-    @method_decorator(cache_page(60 * 15))
     def search(self, request):
         search = request.GET.get('search_text')
         search_type = request.GET.get('searchType')
@@ -48,6 +57,9 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
 
 
 class SubRecipeCreateView(LoginRequiredMixin, BaseSubRecipeView, CreateView):
+    """"
+    View to create sub recipes, it also handles the creation of ingredients and steps in the sub recipe.
+    """
     template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
@@ -85,9 +97,21 @@ class SubRecipeCreateView(LoginRequiredMixin, BaseSubRecipeView, CreateView):
 
 
 class SubRecipeDetailView(BaseSubRecipeView, DetailView):
+    """"
+    View for sub recipe details, also displays related main recipes.
+    """
     template_name = 'sub_recipes/subrecipe_detail.html'
 
-    @method_decorator(cache_page(60 * 60))
+    def get_object(self, queryset=None):
+        cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
+        cached_object_data = cache.get(cache_key)
+        if cached_object_data is None:
+            response = super().get_object(queryset)
+            cache.set(cache_key, response, timeout=60 * 60)
+            return response
+        return cached_object_data
+    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         self.object = self.model.objects.prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
@@ -95,6 +119,9 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
 
 
 class SubRecipeUpdateView(LoginRequiredMixin, BaseSubRecipeView, UpdateView):
+    """
+    View to update sub recipes.
+    """
     template_name = 'sub_recipes/recipe_form.html'
 
     def get_context_data(self, **kwargs):

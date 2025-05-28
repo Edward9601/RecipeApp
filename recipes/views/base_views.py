@@ -5,8 +5,10 @@ from ..forms.recipe_forms import RecipeIngredientForm, RecipeStepForm, RecipeFor
 from ..forms.sub_recipe_forms import SubRecipeForm
 from django.forms import inlineformset_factory
 from django import forms
+from helpers.mixins import UsersAndGuestsAuth
 
-class BaseRecipeView():
+
+class BaseRecipeView(UsersAndGuestsAuth):
     """
     Base view for recipes to extend
     """
