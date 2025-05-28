@@ -4,8 +4,6 @@ from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.core.cache import cache
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
 
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
 from ..models.recipe_models import RecipeSubRecipe, Recipe
@@ -19,19 +17,29 @@ class RecipeListView(BaseRecipeView, ListView):
     template_name = 'recipes/home.html'
     context_object_name = 'recipes'
 
+    def get(self, request, *args, **kwargs):
+        if request.htmx:
+            return self.search(request)
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_url'] = 'recipes:recipe_search'
         return context
     
-    @method_decorator(cache_page(60 * 15))  # Cache the view for 15 minutes
-    def get(self, request, *args, **kwargs):
-        if request.htmx:
-            return self.search(request)
-        return super().get(request, *args, **kwargs)
-    
+    def get_queryset(self):
+        # Try to get cached data
+        cache_key = 'recipe_list_queryset'
+        cached_queryset_data = cache.get(cache_key)
+        
+        if cached_queryset_data is None:
+            # If not in cache, get fresh data and cache it
+            queryset = super().get_queryset()
+            cache.set(cache_key, queryset, timeout=60 * 15)  # Cache for 15 minutes
+            return queryset
+        return cached_queryset_data
+        
 
-    @method_decorator(cache_page(60 * 15))  # Cache the view for 15 minutes
     def search(self, request):
         search = request.GET.get('search_text')
         search_type = request.GET.get('searchType')
@@ -51,7 +59,6 @@ class RecipeListView(BaseRecipeView, ListView):
         else:
             recipes = self.model.objects.all()
 
-        print(recipes)  # Debugging: Check what is being returned
         return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
 
 
@@ -60,10 +67,21 @@ class RecipeDetailView(BaseRecipeView, DetailView):
     View for recipe details, also displays related recipes
     """
 
-    @method_decorator(cache_page(60 * 60))  # Cache the view for 1 hour
+    def get_object(self, queryset=None):
+        # Try to get cached data
+        cache_key = f'recipe_detail_{self.kwargs.get("pk")}'
+        cached_object_data = cache.get(cache_key)
+        
+        if cached_object_data is None:
+            # If not in cache, get fresh data and cache it
+            queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'sub_recipes')
+            response = super().get_object(queryset)
+            cache.set(cache_key, response, timeout=60 * 60)  # Cache for 1 hour
+            return response
+        return cached_object_data
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.object = self.model.objects.prefetch_related('steps', 'ingredients', 'sub_recipes').get(pk=self.object.pk)
         return context
 
 
