@@ -108,10 +108,18 @@ WSGI_APPLICATION = 'mywebsite.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache"
+    }
+}
 
-if os.getenv('GITHUB_WORKFLOW'):
-    DATABASES = {
-        'default': {
+ENV = os.getenv('ENVIRONMENT', 'development').lower()
+
+def get_db_config():
+    """Get database configuration based on environment."""
+    if ENV == 'github_actions':
+        return {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': 'github-actions',
             'USER': 'postgres',
@@ -119,30 +127,55 @@ if os.getenv('GITHUB_WORKFLOW'):
             'HOST': 'localhost',
             'PORT': '5432'
         }
-    }
-else:
-    tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
-
-    DATABASES = {
-        'default': {
+    
+    if ENV == 'development':
+        db_url = os.getenv("DATABASE_URL")
+        if not db_url:
+            raise ValueError("DATABASE_URL environment variable is required for development environment")
+        
+        tmp_postgres = urlparse(db_url)
+        return {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': tmpPostgres.path.replace('/', ''),
-            'USER': tmpPostgres.username,
-            'PASSWORD': tmpPostgres.password,
-            'HOST': tmpPostgres.hostname,
-            'PORT': tmpPostgres.port or 5432,
+            'NAME': tmp_postgres.path.replace('/', ''),
+            'USER': tmp_postgres.username,
+            'PASSWORD': tmp_postgres.password,
+            'HOST': tmp_postgres.hostname,
+            'PORT': tmp_postgres.port or 5432,
             'OPTIONS': {
                 'sslmode': 'require',
             }
+        }
+    else:
+        return {
+            'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': os.getenv('DB_PORT', 5432),
+        }
+
+try:
+    DATABASES = {
+        'default': get_db_config()
+    }
+except ValueError as e:
+    if DEBUG:
+        print(f"Database configuration error: {e}")
+        # Fallback to SQLite for development if configuration fails
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
-    
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL"),
-    }
-}
+    else:
+        raise
+
+# Redis configuration
+redis_url = os.getenv("REDIS_URL") if ENV == 'development' else os.getenv("LOCAL_REDIS_URL")
+if redis_url:
+    CACHES['default']['LOCATION'] = redis_url
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
