@@ -5,10 +5,9 @@ from ..forms.recipe_forms import RecipeIngredientForm, RecipeStepForm, RecipeFor
 from ..forms.sub_recipe_forms import SubRecipeForm
 from django.forms import inlineformset_factory
 from django import forms
-from helpers.mixins import UsersAndGuestsAuth
 
 
-class BaseRecipeView(UsersAndGuestsAuth):
+class BaseRecipeView():
     """
     Base view for recipes to extend
     """
@@ -17,7 +16,7 @@ class BaseRecipeView(UsersAndGuestsAuth):
     intermediate_table = RecipeSubRecipe
 
 
-class BaseViewForDataUpdate(BaseRecipeView):
+class BaseViewForDataUpdate(BaseRecipeView): # TODO: Refactor this to be more generic
     """
     Base view to handle create and update operation on recipes.
     """

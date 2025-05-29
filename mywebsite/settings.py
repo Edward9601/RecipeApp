@@ -39,7 +39,7 @@ STORAGES = {
     'default': {
         'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'
     },
-    # Configuration for CSS and JS files on S3
+    # Configuration for CSS and JS files on S3(currently not used, but it is required for static files to work)
     'staticfiles': {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
     }
@@ -132,7 +132,7 @@ def get_db_config():
         db_url = os.getenv("DATABASE_URL")
         if not db_url:
             raise ValueError("DATABASE_URL environment variable is required for development environment")
-        
+        DEBUG = False  # Set DEBUG to False for production-like behavior in development
         tmp_postgres = urlparse(db_url)
         return {
             'ENGINE': 'django.db.backends.postgresql',
@@ -233,3 +233,10 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Expire session after 30 minutes
+SESSION_COOKIE_AGE = 1800  
+# Updates session expiry on every request
+SESSION_SAVE_EVERY_REQUEST = True
+# Expire session when browser closes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True

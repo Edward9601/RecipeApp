@@ -4,8 +4,13 @@
         height: 250px;
         object-fit: cover; /* Crops the image to fill the size */
         border-radius: 10px; /* Optional: Round corners */
-        margin: 5px;
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
     }
+
+.image:hover {
+    transform: scale(1.05); /* Slightly enlarge the image on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
+}
 
 .card-title {
     font-family: Arial, sans-serif;
