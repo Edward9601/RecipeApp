@@ -1,0 +1,1 @@
+GUEST_USER_NAME = "guest"
