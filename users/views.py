@@ -6,6 +6,7 @@ from .forms import UserRegistrationForm, LoginForm
 from django.views.generic import CreateView
 from django.contrib.auth.views import LogoutView, LoginView
 from django.contrib.auth.models import User
+from helpers.constants import GUEST_USER_NAME
 
 class UserRegistrationView(CreateView):
     """
@@ -53,7 +54,7 @@ class UserLogoutView(LogoutView):
     
     def post(self, request, *args, **kwargs):
         # if the user is a guest, delete their account
-        if request.user.username.startswith('guest'):
+        if request.user.username == GUEST_USER_NAME:
             request.user.delete()
         return super().post(request, *args, **kwargs)
     
@@ -61,7 +62,7 @@ def guest_login(request):
     """
     View to handle guest login
     """
-    guest_user, created = User.objects.get_or_create(username='guest',
+    guest_user, created = User.objects.get_or_create(username=GUEST_USER_NAME,
                                                     defaults={
                                                             'is_active': True,
                                                             'is_staff': False,

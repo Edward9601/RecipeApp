@@ -16,6 +16,7 @@ class RecipeListView(BaseRecipeView, ListView):
 
     template_name = 'recipes/home.html'
     context_object_name = 'recipes'
+    paginate_by = 12
 
     def get(self, request, *args, **kwargs):
         if request.htmx:
