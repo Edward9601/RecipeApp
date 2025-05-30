@@ -1,10 +1,11 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import render
 
 from django.core.cache import cache
 from django.forms import inlineformset_factory
+
+from helpers.mixins import RegisteredUserAuthRequired
 
 from .base_views import BaseSubRecipeView
 
@@ -56,7 +57,7 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
         return render(request, 'recipes/partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
 
 
-class SubRecipeCreateView(LoginRequiredMixin, BaseSubRecipeView, CreateView):
+class SubRecipeCreateView(RegisteredUserAuthRequired, BaseSubRecipeView, CreateView):
     """"
     View to create sub recipes, it also handles the creation of ingredients and steps in the sub recipe.
     """
@@ -118,7 +119,7 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
         return context
 
 
-class SubRecipeUpdateView(LoginRequiredMixin, BaseSubRecipeView, UpdateView):
+class SubRecipeUpdateView(RegisteredUserAuthRequired, BaseSubRecipeView, UpdateView):
     """
     View to update sub recipes.
     """
@@ -161,7 +162,7 @@ class SubRecipeUpdateView(LoginRequiredMixin, BaseSubRecipeView, UpdateView):
         return super().form_valid(form)
 
 
-class SubRecipeDeleteView(LoginRequiredMixin, DeleteView):
+class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     """
     View to delete sub recipes, it doesn't inherite from the becase because form_class messes up with it's logic
     """
