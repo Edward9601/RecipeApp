@@ -7,7 +7,7 @@ from django.core.cache import cache
 
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
 from ..models.recipe_models import RecipeSubRecipe, Recipe
-
+from helpers.mixins import RegisteredUserAuthRequired
 
 class RecipeListView(BaseRecipeView, ListView):
     """
@@ -85,7 +85,7 @@ class RecipeDetailView(BaseRecipeView, DetailView):
         return context
 
 
-class RecipeCreateView(LoginRequiredMixin, BaseViewForDataUpdate, CreateView):
+class RecipeCreateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, CreateView):
     """
     View to create recipes.
     """
@@ -102,7 +102,7 @@ class RecipeCreateView(LoginRequiredMixin, BaseViewForDataUpdate, CreateView):
         return redirect(self.object.get_absolute_url())
 
 
-class RecipeUpdateView(LoginRequiredMixin, BaseViewForDataUpdate, UpdateView):
+class RecipeUpdateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, UpdateView):
     """
     View to update recipes.
     """
@@ -134,7 +134,7 @@ class RecipeUpdateView(LoginRequiredMixin, BaseViewForDataUpdate, UpdateView):
         return redirect(self.get_success_url())
 
 
-class RecipeDeleteView(LoginRequiredMixin, DeleteView):
+class RecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     """
     View to delete recipes.
     """

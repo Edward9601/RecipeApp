@@ -1,10 +1,9 @@
 
-{% extends "base.html" %}
+{% extends "user_base.html" %}
 
 {% load crispy_forms_tags %}
-{% block content %}
+{% block user_content %}
   <div class="container">
-    <h2>Register</h2>
     <form method="POST" autocomplete="off">
       {% csrf_token %}
       <fieldset>

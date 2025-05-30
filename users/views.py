@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login
 from django.urls import reverse_lazy
 from .forms import UserRegistrationForm, LoginForm
-from django.views.generic import CreateView, View
+from django.views.generic import CreateView
 from django.contrib.auth.views import LogoutView, LoginView
+from django.contrib.auth.models import User
 
 class UserRegistrationView(CreateView):
     """
@@ -35,6 +36,7 @@ class UserLoginView(LoginView):
         return render(request, self.template_name, {'form': form})
     
     def post(self, request):
+
         form = self.form_class(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
@@ -50,5 +52,24 @@ class UserLogoutView(LogoutView):
     next_page = 'login'
     
     def post(self, request, *args, **kwargs):
+        # if the user is a guest, delete their account
+        if request.user.username.startswith('guest'):
+            request.user.delete()
         return super().post(request, *args, **kwargs)
+    
+def guest_login(request):
+    """
+    View to handle guest login
+    """
+    guest_user, created = User.objects.get_or_create(username='guest',
+                                                    defaults={
+                                                            'is_active': True,
+                                                            'is_staff': False,
+                                                            'is_superuser': False
+                                                            })
+    if created:
+        guest_user.set_password(User.objects.make_random_password())
+        guest_user.save()
+    login(request, guest_user)
+    return redirect('recipes:home')
 

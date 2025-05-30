@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "user_base.html" %}
 {% block title %} Login {% endblock %}
 {% load crispy_forms_tags %}
-{% block content %}
+{% block user_content %}
   <div class="container">
     <h2>Login</h2>
     <form method="POST" action="{% url 'login' %}">
@@ -10,5 +10,12 @@
       <p> Don't have an account yet? Create one <a href="{% url 'register' %}"> Here</a>!</p>
       <button type="submit" class="btn btn-primary">Login</button>
     </form>
+    <div class="mt-3">
+      <form method="POST" action="{% url 'guest_login' %}">
+        {% csrf_token %}
+        <input type="hidden" name="guest_login" value="true">
+        <button type="submit" class="btn btn-secondary">Login as Guest</button>
+      </form>
+    </div>
   </div>
 {% endblock %}

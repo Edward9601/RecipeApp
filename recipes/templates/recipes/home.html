@@ -7,9 +7,11 @@
 <section>
     {% include 'recipes/partials/search.html'%}
 </section>
-<div>
-    <a class="link" href="{% url 'recipes:create' %}">Create recipe</a>
-</div>
+{% if user.username != 'guest'%}
+    <div>
+        <a class="link" href="{% url 'recipes:create' %}">Create recipe</a>
+    </div>
+{% endif %}
 <section>
     <div id="results" class="container">
         {% include 'recipes/partials/recipe_list.html'%}
