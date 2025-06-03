@@ -7,9 +7,11 @@
 <section>
     {% include 'recipes/partials/search.html'%}
 </section>
-<div>
-    <a class="link" href="{% url 'recipes:create_sub_recipe' %}">Create sub-recipe</a>
-</div>
+{% if user.username != 'guest' and user.is_authenticated%}
+    <div>
+        <a class="link" href="{% url 'recipes:create' %}">Create sub-recipe</a>
+    </div>
+{% endif %}
 <section>
     <div id="results" class="container">
         {% include 'recipes/partials/sub_recipe_list.html' %}

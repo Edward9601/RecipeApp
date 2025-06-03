@@ -83,7 +83,16 @@ class RecipeDetailView(BaseRecipeView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['can_edit'] = self.can_edit_recipe()
         return context
+    
+
+    def can_edit_recipe(self):
+        """
+        Determines if the user can edit the recipe.
+        """
+        return self.request.user.id == self.object.author.id or self.request.user.is_staff or self.request.user.is_superuser
+
 
 
 class RecipeCreateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, CreateView):
