@@ -87,12 +87,13 @@
             </div>
         </div>
     </div>
-
-    <div class="row mt-4">
-        <div class="col text-center">
-            <a class="btn btn-outline-info mx-2" href="{% url 'recipes:update' object.id %}">Update</a>
-            <a class="btn btn-outline-danger mx-2" href="{% url 'recipes:delete' object.id %}">Delete</a>
+    {% if can_edit %}
+        <div class="row mt-4">
+            <div class="col text-center">
+                <a class="btn btn-outline-info mx-2" href="{% url 'recipes:update' object.id %}">Update</a>
+                <a class="btn btn-outline-danger mx-2" href="{% url 'recipes:delete' object.id %}">Delete</a>
+            </div>
         </div>
-    </div>
+    {% endif %}
 </div>
 {% endblock %}

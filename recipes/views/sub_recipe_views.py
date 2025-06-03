@@ -107,7 +107,7 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
         cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         cached_object_data = cache.get(cache_key)
         if cached_object_data is None:
-            response = super().get_object(queryset)
+            response = super().get_object(queryset).prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
             cache.set(cache_key, response, timeout=60 * 60)
             return response
         return cached_object_data
@@ -115,8 +115,14 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        self.object = self.model.objects.prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
+        context['can_edit'] = self.can_edit_recipe()
         return context
+    
+    def can_edit_recipe(self):
+        """
+        Determines if the user can edit the recipe.
+        """
+        return self.request.user.id == self.object.author.id or self.request.user.is_staff or self.request.user.is_superuser
 
 
 class SubRecipeUpdateView(RegisteredUserAuthRequired, BaseSubRecipeView, UpdateView):
