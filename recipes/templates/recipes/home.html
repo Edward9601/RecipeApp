@@ -7,7 +7,7 @@
 <section>
     {% include 'recipes/partials/search.html'%}
 </section>
-{% if user.username != 'guest'%}
+{% if user.username != 'guest' and user.is_authenticated%}
     <div>
         <a class="link" href="{% url 'recipes:create' %}">Create recipe</a>
     </div>
@@ -24,7 +24,7 @@
                     <a href="/recipes?page={{ page_obj.previous_page_number }}">previous</a>
                 {% endif %}
                 <span class="page-current">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                 </span>
                 {% if page_obj.has_next %}
                     <a href="/recipes?page={{ page_obj.next_page_number }}">next</a>
