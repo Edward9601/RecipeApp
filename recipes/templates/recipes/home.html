@@ -5,7 +5,7 @@
 
 <h1>Home Page</h1>
 <section>
-    {% include 'recipes/partials/search.html'%}
+    {% include 'partials/search.html'%}
 </section>
 {% if user.username != 'guest' and user.is_authenticated%}
     <div>
@@ -14,7 +14,7 @@
 {% endif %}
 <section>
     <div id="results" class="container">
-        {% include 'recipes/partials/recipe_list.html'%}
+        {% include 'partials/recipe_list.html'%}
     </div>
 </section>
 {% if is_paginated %}

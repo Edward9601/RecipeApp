@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
@@ -60,7 +59,7 @@ class RecipeListView(BaseRecipeView, ListView):
         else:
             recipes = self.model.objects.all()
 
-        return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
+        return render(request, 'partials/recipe_list.html', {'recipes': recipes})
 
 
 class RecipeDetailView(BaseRecipeView, DetailView):
@@ -109,6 +108,7 @@ class RecipeCreateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, Create
             for sub_recipe in sub_recipes:
                 RecipeSubRecipe.objects.create(recipe=self.object,
                                                sub_recipe=sub_recipe)
+        
         return redirect(self.object.get_absolute_url())
 
 

@@ -1,4 +1,7 @@
-<form hx-get="{% url search_url %}" hx-target="#results" hx-trigger="submit" class="mb-4">
+<form hx-get="{% url search_url %}"
+      hx-target="#results"
+      hx-trigger="input changed delay:0.5s"
+      class="mb-4">
     <div class="input-group">
         <input type="text" name="search_text" class="form-control" placeholder="Search recipes...">
         <div class="input-group-append">
