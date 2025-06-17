@@ -107,7 +107,8 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
         cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         cached_object_data = cache.get(cache_key)
         if cached_object_data is None:
-            response = super().get_object(queryset).prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
+            queryset = self.get_queryset().prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
+            response = super().get_object(queryset)
             cache.set(cache_key, response, timeout=60 * 60)
             return response
         return cached_object_data

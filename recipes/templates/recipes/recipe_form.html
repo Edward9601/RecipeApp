@@ -8,6 +8,15 @@
     {% url 'recipes:create' %}{% endif %}" 
      autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
+
+         <!-- Add these hidden fields explicitly -->
+        <div style="display: none;">
+            {{ form.categories }}
+            {{ form.tags }}
+        </div>
+
+
+
         <div class="mb-3">
             {{ form.title|as_crispy_field }}
         </div>
@@ -17,6 +26,9 @@
         <div class="mb-3">
             {{ form.picture|as_crispy_field }}
         </div>
+        <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoriesAndTagsModal">
+            Add Categories and Tags
+        </button>
         {% if form.sub_recipes %}
             <div class="dropdown">
                 <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="subRecipeDropdown">
@@ -31,26 +43,13 @@
             </div>
         {% endif %}
         <div class="conteiner-for-ingredients-and-steps">
-            {% include 'recipes/partials/steps_and_ingredients_for_create_form.html'%}
+            {% include 'partials/steps_and_ingredients_for_create_form.html'%}
         </div>
     </form>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const dropdownButton = document.getElementById("subRecipeDropdown");
-        const dropdownMenu = document.getElementById("subRecipeDropdownMenu");
-    
-        if (dropdownButton && dropdownMenu) {
-            dropdownButton.addEventListener("click", function (event) {
-                event.stopPropagation(); // Prevents clicks inside menu from closing it
-                dropdownMenu.classList.toggle("show");
-            });
-    
-        }
-    });
-</script>
-
+<!--Modal for Categories and Tags  -->
+{% include 'partials/categories_and_tags_modal.html' %}
 {% endblock %}
 
 

@@ -1,15 +1,15 @@
-<form hx-get="{% url search_url %}"
-      hx-target="#results"
-      hx-trigger="input changed delay:0.5s"
-      class="mb-4">
+<form 
+    class="mb-4"
+    style="margin-top: 0;"
+    hx-get="{% url search_url %}"
+    hx-target="#results"
+    hx-trigger="input changed delay:500ms from:#search-input">
     <div class="input-group">
-        <input type="text" name="search_text" class="form-control" placeholder="Search recipes...">
-        <div class="input-group-append">
-            <select name="searchType" class="form-control">
-                <option value="title">Title</option>
-                <option value="ingredient">Ingredient</option>
-            </select>
-            <button type="submit" class="btn btn-primary">Search</button>
-        </div>
+        <input type="text" id="search-input" name="search_text" class="form-control" placeholder="Search recipes..." autocomplete="off">
+        <select name="searchType" class="form-select" style="max-width: 150px;">
+            <option value="title">Title</option>
+            <option value="ingredient">Ingredient</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Search</button>
     </div>
 </form>
