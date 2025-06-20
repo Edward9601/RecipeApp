@@ -4,6 +4,7 @@
   "description": "A simple Django-based recipe website where users can create, view, and manage their own recipes. Each recipe includes multiple ingredients and step-by-step instructions. You can also filter recipes by title or ingredient names.",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
     "watch": "tsc -w"
   },
   "keywords": [],
