@@ -24,27 +24,23 @@
 
     <div class="row mt-4">
         {% if object.categories.all %}
-        <div class="col-md-6">
-            <div class="card p-3">
-                <h2>Categories</h2>
-                <ul>
-                    {% for category in object.categories.all %}
-                        <li>{{ category.name }}</a></li>
-                    {% endfor %}
-                </ul>
+        <div class="col-md-6 mb-4">
+            <h3>Categories</h3>
+            <div>
+                {% for category in object.categories.all %}
+                    <span class="badge bg-primary me-1">{{ category.name }}</span>
+                {% endfor %}
             </div>
         </div>
         {% endif %}
         
         {% if object.tags.all %}
-        <div class="col-md-6">
-            <div class="card p-3">
-                <h2>Tags</h2>
-                <ul>
-                    {% for tag in object.tags.all %}
-                        <li>{{ tag.name }}</li>
-                    {% endfor %}
-                </ul>
+        <div class="col-md-6 mb-4">
+            <h3>Tags</h3>
+            <div>
+                {% for tag in object.tags.all %}
+                    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                {% endfor %}
             </div>
         </div>
         {% endif %}

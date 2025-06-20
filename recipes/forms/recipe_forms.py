@@ -27,6 +27,9 @@ class RecipeCreateForm(forms.ModelForm):
     class Meta:
         model = Recipe
         fields = ['title', 'description', 'picture', 'sub_recipes', 'categories', 'tags']
+        widgets = {
+            'sub_recipes': forms.CheckboxSelectMultiple(),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

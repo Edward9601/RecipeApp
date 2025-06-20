@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from recipes.models.recipe_models import Category
+from recipes.models.recipe_models import Category, Tag
 
 """
 Management command to populate the Category model with a predefined list of
@@ -25,17 +25,36 @@ class Command(BaseCommand):
     help = 'Load preset categories and subcategories'
 
     def handle(self, *args, **kwargs):
-        data = {
-            'Breakfast': ['Sweet', 'Savory', 'Quick', 'Healthy'],
-            'Lunch': ['Light', 'Hearty', 'Vegan', ''],
-            'Dinner': ['Quick', 'Low-carb', 'Fancy'],
-            'Snack': ['Sweet', 'Salty', 'Energy'],
-            'Dessert': ['Chocolate', 'Fruit-based', 'Cold', 'Warm'],
-        }
+        categories_list = [
+            'Breakfast',
+            'Lunch or Dinner',
+            'Snack',
+            'Dessert',
+        ]
 
-        for parent_name, childent_names in data.items():
-            parent, _ = Category.objects.get_or_create(name=parent_name, parent=None)
-            for child_name in childent_names:
-                Category.objects.get_or_create(name=child_name, parent=parent)
+        tags_list = [
+            'Vegan',
+            'Gluten-free',
+            'Low-carb',
+            'Fancy',
+            'Salty',
+            'Energy',
+            'Chocolate',
+            'Fruit-based',
+            'Cold',
+            'Warm',
+            'Quick',
+            'Healthy',
+            'Light',
+            'Sweet',
+            'Savory',
+        ]
+        Category.objects.all().delete()  # Clear existing categories
+        Tag.objects.all().delete()
+        for category in categories_list:
+            Category.objects.get_or_create(name=category)
+
+        for tag in tags_list:
+            Tag.objects.get_or_create(name=tag)
 
         self.stdout.write(self.style.SUCCESS('Categories loaded!'))

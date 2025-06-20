@@ -66,13 +66,9 @@ class BaseViewForDataUpdate(BaseRecipeView): # TODO: Refactor this to be more ge
             # Get and convert category/tag IDs to integers
             category_ids = [int(cat_id) for cat_id in self.request.POST.getlist('categories')]
             tag_ids = [int(tag_id) for tag_id in self.request.POST.getlist('tags')]
-
-            # Convert string IDs to integers and set relationships
-            if category_ids:
-                self.object.categories.set(category_ids)
-
-            if tag_ids:
-                self.object.tags.set(tag_ids)
+   
+            self.object.categories.set(category_ids)
+            self.object.tags.set(tag_ids)
 
             return True  # Signal success
         return False  # Signal failure

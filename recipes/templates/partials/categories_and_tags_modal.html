@@ -6,14 +6,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Important: Add this container for form elements -->
                 <div id="modalFormElements">
                     <div class="categories-section mb-4">
                         <h6>Categories</h6>
                         <div id="categoriesList" class="form-check">
                             {% for category in form.categories %}
                                 <div class="form-check">
-                                    <!-- Explicitly set the name attribute -->
                                     <input type="checkbox" 
                                            class="form-check-input" 
                                            name="categories"
@@ -32,7 +30,6 @@
                         <div id="tagsList" class="form-check">
                             {% for tag in form.tags %}
                                 <div class="form-check">
-                                    <!-- Explicitly set the name attribute -->
                                     <input type="checkbox" 
                                            class="form-check-input" 
                                            name="tags"
