@@ -11,6 +11,7 @@ urlpatterns = [
     path('recipe/create', recipe_views.RecipeCreateView.as_view(), name='create'),
     path('recipe/<int:pk>/update/', recipe_views.RecipeUpdateView.as_view(), name='update'),
     path('recipe/<int:pk>/delete/', recipe_views.RecipeDeleteView.as_view(), name='delete'),
+    path('get-categories-tags/', recipe_views.get_categories_and_tags, name='get_categories_and_tags'),
 
     path('sub-recipes', sub_recipe_views.SubRecipeListView.as_view(), name='sub_recipes'),
     path('sub-recipes', sub_recipe_views.SubRecipeListView.as_view(), name='sub_recipe_search'),

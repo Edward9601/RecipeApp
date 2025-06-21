@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
@@ -6,7 +5,7 @@ from django.http import JsonResponse
 from django.core.cache import cache
 
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
-from ..models.recipe_models import RecipeSubRecipe, Recipe
+from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
 from helpers.mixins import RegisteredUserAuthRequired
 
 class RecipeListView(BaseRecipeView, ListView):
@@ -60,7 +59,7 @@ class RecipeListView(BaseRecipeView, ListView):
         else:
             recipes = self.model.objects.all()
 
-        return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
+        return render(request, 'partials/recipe_list.html', {'recipes': recipes})
 
 
 class RecipeDetailView(BaseRecipeView, DetailView):
@@ -75,7 +74,7 @@ class RecipeDetailView(BaseRecipeView, DetailView):
         
         if cached_object_data is None:
             # If not in cache, get fresh data and cache it
-            queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'sub_recipes')
+            queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'sub_recipes', 'categories', 'tags')
             response = super().get_object(queryset)
             cache.set(cache_key, response, timeout=60 * 60)  # Cache for 1 hour
             return response
@@ -101,14 +100,18 @@ class RecipeCreateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, Create
     """
 
     def form_valid(self, form):
-
+        success = BaseViewForDataUpdate.form_valid(self, form)
+        if not success:
+            return self.form_invalid(form)
+        print(form.cleaned_data)
+        # Handle sub-recipes
         sub_recipes = form.cleaned_data.get('sub_recipes')
-        # calling base class to save model
-        BaseViewForDataUpdate.form_valid(self, form)
         if sub_recipes:
             for sub_recipe in sub_recipes:
-                RecipeSubRecipe.objects.create(recipe=self.object,
-                                               sub_recipe=sub_recipe)
+                RecipeSubRecipe.objects.create(recipe=self.object, sub_recipe=sub_recipe)
+
+        # Clear the cache for recipe list to ensure new recipe appears
+        cache.delete('recipe_list_queryset')  
         return redirect(self.object.get_absolute_url())
 
 
@@ -123,8 +126,11 @@ class RecipeUpdateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, Update
         form = super().get_form(form_class)
 
         if self.object.sub_recipes.all():
-            form.fields[
-                'sub_recipes'].initial = self.object.sub_recipes.all()  # ensures that previosly selected sub recipes appear as checked.
+            form.fields['sub_recipes'].initial = self.object.sub_recipes.all()  # ensures that previosly selected sub recipes appear as checked.
+        elif self.object.categories.all():
+            form.fields['categories'].initial = self.object.categories.all()
+        elif self.object.tags.all():
+            form.fields['tags'].initial = self.object.tags.all()
         return form
 
     def form_valid(self, form):
@@ -141,6 +147,10 @@ class RecipeUpdateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, Update
             RecipeSubRecipe.objects.bulk_create([RecipeSubRecipe(recipe=self.object,
                                                                  sub_recipe=sub_recipe) for sub_recipe in
                                                  sub_recipes_to_add])
+        record_id = f'recipe_detail_{self.object.id}'
+        cache.delete(record_id)  # Clear the cache for this recipe detail view
+        cache.delete('recipe_list_queryset')  # Clear the cache for recipe list to ensure updated
+        
         return redirect(self.get_success_url())
 
 
@@ -150,3 +160,19 @@ class RecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     """
     model = Recipe
     success_url = reverse_lazy('recipes:home')
+
+
+def get_categories_and_tags(request):
+    """
+    Returns categories and tags as JSON response.
+    """
+    
+    categories = Category.objects.all()
+    tags = Tag.objects.all()
+
+    data = {
+        'categories': [{'id': category.id, 'name': category.name} for category in categories],
+        'tags': [{'id': tag.id, 'name': tag.name} for tag in tags]
+    }
+    return JsonResponse(data)
+

@@ -5,16 +5,16 @@
 
 <h1>Sub Recipe Page</h1>
 <section>
-    {% include 'recipes/partials/search.html'%}
+    {% include 'partials/search.html'%}
 </section>
 {% if user.username != 'guest' and user.is_authenticated%}
     <div>
-        <a class="link" href="{% url 'recipes:create' %}">Create sub-recipe</a>
+        <a class="btn btn-primary" href="{% url 'recipes:create' %}">Create sub-recipe</a>
     </div>
 {% endif %}
 <section>
     <div id="results" class="container">
-        {% include 'recipes/partials/sub_recipe_list.html' %}
+        {% include 'partials/sub_recipe_list.html' %}
     </div>
 <section>
 {% endblock %}
