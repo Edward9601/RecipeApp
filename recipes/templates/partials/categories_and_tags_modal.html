@@ -1,0 +1,53 @@
+<div class="modal fade" id="categoriesAndTagsModal" tabindex="-1" aria-labelledby="categoriesAndTagsModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoriesAndTagsModalLabel">Categories and Tags</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalFormElements">
+                    <div class="categories-section mb-4">
+                        <h6>Categories</h6>
+                        <div id="categoriesList" class="form-check">
+                            {% for category in form.categories %}
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           class="form-check-input" 
+                                           name="categories"
+                                           id="{{ category.id_for_label }}"
+                                           value="{{ category.data.value }}"
+                                           {% if category.data.selected %}checked{% endif %}>
+                                    <label class="form-check-label" for="{{ category.id_for_label }}">
+                                        {{ category.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tags-section">
+                        <h6>Tags</h6>
+                        <div id="tagsList" class="form-check">
+                            {% for tag in form.tags %}
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           class="form-check-input" 
+                                           name="tags"
+                                           id="{{ tag.id_for_label }}"
+                                           value="{{ tag.data.value }}"
+                                           {% if tag.data.selected %}checked{% endif %}>
+                                    <label class="form-check-label" for="{{ tag.id_for_label }}">
+                                        {{ tag.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div> 
+</div>

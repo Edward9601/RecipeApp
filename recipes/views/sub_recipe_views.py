@@ -54,7 +54,7 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
                 sub_recipes = query_set.distinct()
         else:
             sub_recipes = self.model.objects.all()
-        return render(request, 'recipes/partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
+        return render(request, 'partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
 
 
 class SubRecipeCreateView(RegisteredUserAuthRequired, BaseSubRecipeView, CreateView):
@@ -87,7 +87,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, BaseSubRecipeView, CreateV
         context = self.get_context_data()
         ingredient_formset = context['ingredient_formset']
         steps_formset = context['step_formset']
-        if ingredient_formset.is_valid() or steps_formset.is_valid():
+        if ingredient_formset.is_valid() and steps_formset.is_valid():
             form.save()
             ingredient_formset.save()
             steps_formset.save()
@@ -107,7 +107,8 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
         cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         cached_object_data = cache.get(cache_key)
         if cached_object_data is None:
-            response = super().get_object(queryset).prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
+            queryset = self.get_queryset().prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
+            response = super().get_object(queryset)
             cache.set(cache_key, response, timeout=60 * 60)
             return response
         return cached_object_data

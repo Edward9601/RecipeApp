@@ -19,13 +19,16 @@ on how to prepopulate Category table with initial data.
 """
 
 class Category(models.Model): 
-    name = models.CharField(max_length=30)
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='sub_categories')
+    name = models.CharField(max_length=30, unique=True)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['name', 'parent'], name='unique_parent_to_sub_categories_relation')
-        ]
+    def __str__(self):
+        return self.name
+
+class Tag(models.Model):
+    name = models.CharField(max_length=30, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(BaseRecipe):
@@ -33,8 +36,8 @@ class Recipe(BaseRecipe):
     picture = models.ImageField(upload_to='recipes_pictures_originals/', blank=True, null=True)
     sub_recipes = models.ManyToManyField(SubRecipe, through='RecipeSubRecipe',
                                          related_name='main_recipes', blank=True)
-    categories = models.ManyToManyField(Category, related_name='recipes')
-
+    categories = models.ManyToManyField(Category, related_name='recipes', blank=True)
+    tags = models.ManyToManyField(Tag, related_name='recipes', blank=True)
 
     def get_thumbnail_url(self):
         if self.picture:
