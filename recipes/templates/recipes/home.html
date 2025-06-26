@@ -7,6 +7,36 @@
 <section>
     {% include 'partials/search.html'%}
 </section>
+
+<!-- Filters Dropdown Section -->
+<section class="mb-4">
+    <div class="dropdown-filter-container">
+        <button class="btn btn-outline-secondary mb-2" type="button" id="filterDropdownBtn" aria-expanded="false">
+            <span class="me-2">&#x1F50D;</span> Filter Recipes
+        </button>
+        <div id="filterDropdownPanel" class="dropdown-filter-panel">
+            <form method="get" id="filters-form">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Category:</strong>
+                        <div class="filter-checkbox-list">
+                            {{ filter_form.category }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Tag:</strong>
+                        <div class="filter-checkbox-list">
+                            {{ filter_form.tag }}
+                        </div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
 {% if user.username != 'guest' and user.is_authenticated%}
     <div>
         <a class="btn btn-primary" href="{% url 'recipes:create' %}">Create recipe</a>
@@ -32,5 +62,8 @@
             </span>
     </div>
 {% endif %}
+
+<script src="{% static 'recipes/java_script/recipes.js' %}"></script>
+
 {% endblock %}
 
