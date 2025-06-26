@@ -6,6 +6,7 @@ from django.core.cache import cache
 
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
+from ..forms.recipe_filter_forms import RecipeFilterForm
 from helpers.mixins import RegisteredUserAuthRequired
 
 class RecipeListView(BaseRecipeView, ListView):
@@ -25,19 +26,29 @@ class RecipeListView(BaseRecipeView, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_url'] = 'recipes:recipe_search'
+        context['filter_form'] = self.get_filter_form()
         return context
-    
+
+    def get_filter_form(self):
+        return RecipeFilterForm(self.request.GET or None)
+
     def get_queryset(self):
         # Try to get cached data
         cache_key = 'recipe_list_queryset'
-        cached_queryset_data = cache.get(cache_key)
-        
-        if cached_queryset_data is None:
+        queryset = cache.get(cache_key)
+        if queryset is None:
             # If not in cache, get fresh data and cache it
             queryset = super().get_queryset()
             cache.set(cache_key, queryset, timeout=60 * 15)  # Cache for 15 minutes
-            return queryset
-        return cached_queryset_data
+        form = self.get_filter_form()
+        if form.is_valid():
+            category = form.cleaned_data.get('category')
+            tag = form.cleaned_data.get('tag')
+            if category and category.exists():
+                queryset = queryset.filter(categories__in=category).distinct()
+            if tag and tag.exists():
+                queryset = queryset.filter(tags__in=tag).distinct()
+        return queryset
         
 
     def search(self, request):

@@ -12,16 +12,26 @@ class RecipeManager {
         this.selectedCategories = new Set();
         this.selectedTags = new Set();
         this.categoriesAndTagsModal = null;
+        // Flag to ensure initial selections are loaded only once
         this.initialeSelectionsLoaded = false;
         // Ingredients and Steps formset management
         this.addIngredientButton = null;
         this.addStepButton = null;
-        this.mainForm = document.getElementById('recipe-from');
+        this.filtersButton = null;
+        this.filtersPanel = null;
+        this.mainForm = document.getElementById('recipe-form');
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
         this.addIngredientButton = document.getElementById('addIngredientButton');
         this.addStepButton = document.getElementById('add-step-button');
         console.log('Found main form:', this.mainForm !== null);
-        this.setupListeners();
+        this.filtersButton = document.getElementById('filterDropdownBtn');
+        this.filtersPanel = document.getElementById('filterDropdownPanel');
+        if (this.mainForm) {
+            this.setupListenersForRecipeForm();
+        }
+        if (this.filtersButton) {
+            this.setupFiltersButton();
+        }
     }
     static getInstance() {
         if (!RecipeManager.instance) {
@@ -29,7 +39,7 @@ class RecipeManager {
         }
         return RecipeManager.instance;
     }
-    setupListeners() {
+    setupListenersForRecipeForm() {
         var _a, _b, _c;
         console.log('Setting up listeners');
         if (this.mainForm) {
@@ -206,6 +216,32 @@ class RecipeManager {
         newForm.innerHTML = tempDiv.innerHTML;
         formsetDiv.appendChild(newForm);
         totalFormsInput.value = (totalForms + 1).toString();
+    }
+    setupFiltersButton() {
+        if (!this.filtersButton || !this.filtersPanel) {
+            console.error('Filters button or panel not found.');
+            return;
+        }
+        this.filtersButton.addEventListener('click', (event) => {
+            var _a, _b, _c, _d;
+            event.stopPropagation();
+            if (!((_a = this.filtersPanel) === null || _a === void 0 ? void 0 : _a.classList.contains('open'))) {
+                (_b = this.filtersPanel) === null || _b === void 0 ? void 0 : _b.classList.add('open');
+                (_c = this.filtersButton) === null || _c === void 0 ? void 0 : _c.setAttribute('aria-expanded', 'true');
+            }
+            else {
+                this.filtersPanel.classList.remove('open');
+                (_d = this.filtersButton) === null || _d === void 0 ? void 0 : _d.setAttribute('aria-expanded', 'false');
+            }
+        });
+        document.addEventListener('click', (event) => {
+            var _a, _b, _c, _d;
+            if (!((_a = this.filtersButton) === null || _a === void 0 ? void 0 : _a.contains(event.target)) &&
+                !((_b = this.filtersPanel) === null || _b === void 0 ? void 0 : _b.contains(event.target))) {
+                (_c = this.filtersPanel) === null || _c === void 0 ? void 0 : _c.classList.remove('open');
+                (_d = this.filtersButton) === null || _d === void 0 ? void 0 : _d.setAttribute('aria-expanded', 'false');
+            }
+        });
     }
 }
 // Initialize when the document loads

@@ -3,7 +3,7 @@
 {% load static %}
 {% block content %}
 <div class="container">
-    <form id="recipe-from" method="POST" action="{% if object %}{% url 'recipes:update' object.id %}
+    <form id="recipe-form" method="POST" action="{% if object %}{% url 'recipes:update' object.id %}
     {% else %}
     {% url 'recipes:create' %}{% endif %}" 
      autocomplete="off" enctype="multipart/form-data">
@@ -44,7 +44,7 @@
         </div>
     </form>
 </div>
-
+<script src="{% static 'recipes/java_script/recipes.js' %}"></script>
 <!--Modal for Categories and Tags  -->
 {% include 'partials/categories_and_tags_modal.html' %}
 {% endblock %}
