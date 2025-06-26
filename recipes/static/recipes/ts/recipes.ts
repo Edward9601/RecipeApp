@@ -12,7 +12,9 @@ class RecipeManager {
     // Using Sets to avoid duplicates and for easier management
     private selectedCategories: Set<number> = new Set();
     private selectedTags: Set<number> = new Set();
+
     private categoriesAndTagsModal: HTMLElement | null = null;
+    // Flag to ensure initial selections are loaded only once
     private initialeSelectionsLoaded: boolean = false;
 
     // Ingredients and Steps formset management
