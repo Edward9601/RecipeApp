@@ -65,30 +65,34 @@ class Recipe(BaseRecipe):
             print(f'Error was encountered while trying to fix image orientation: {e}')
             pass
         return img
-
-    def save(self, *args, **kwargs):
-        # Resize image only if it exists and is new or changed
+    
+    #TODO: Move image resizing logic to a separate method
+    def save(self, *args, **kwargs): 
+        # Resize image only if it exists or is new or changed
         if self.picture and not kwargs.get('raw', False):
             try:
                 # Just in case reset the cursor to the beginning of the file
                 self.picture.seek(0)
-                original_data = self.picture.read()
-                current_hash = hash(original_data)
+                current_image_data = self.picture.read()
+                current_image_hash = hash(current_image_data)
 
-                if not hasattr(self, '_last_picture_hash') or self._last_picture_hash != current_hash: # Verifying 
-                    _, ext = os.path.splitext(self.picture.name)
-
-                    safe_title = self.title.replace(" ", "_")
-
+                old_hash = None
+                if self.pk:
+                    # If the recipe already exists, check if the picture has changed
+                    old_picture = Recipe.objects.get(pk=self.pk).picture
+                    if old_picture:
+                        old_picture.seek(0)
+                        old_hash = hash(old_picture.read())
+                if old_hash is not None and current_image_hash != old_hash:
+                    _, ext = os.path.splittext(old_picture.name)
+                    safe_title = self.title.replace(' ', '_')
                     unique_id = uuid.uuid4().hex[:8]
                     self.picture.name = f"{safe_title}_{unique_id}{ext}"
-                    thumb_name = f"recipes_pictures_thumbs_medium/{safe_title}_{unique_id}{ext}"
 
-                    self.picture.seek(0)
-                    img = Image.open(BytesIO(original_data))
+                    # Resize and save the thumbnail
+                    img = Image.open(BytesIO(current_image_data))
                     img = self.fix_image_orientation(img)
                     img.thumbnail((1200, 1200))
-
                     if img.mode != 'RGB':
                         img = img.convert('RGB')
 
@@ -96,8 +100,9 @@ class Recipe(BaseRecipe):
                     img.save(buffer, format='JPEG', quality=100)
                     buffer.seek(0)
 
+                    thumb_name = f"recipes_pictures_thumbs_medium/{safe_title}_{unique_id}{ext}"
                     default_storage.save(thumb_name, ContentFile(buffer.read()))
-                    self._last_picture_hash = current_hash
+
 
             except Exception as e:
                 print(f'Error was encountered: {e}')

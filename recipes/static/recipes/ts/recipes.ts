@@ -12,22 +12,35 @@ class RecipeManager {
     // Using Sets to avoid duplicates and for easier management
     private selectedCategories: Set<number> = new Set();
     private selectedTags: Set<number> = new Set();
+
     private categoriesAndTagsModal: HTMLElement | null = null;
+    // Flag to ensure initial selections are loaded only once
     private initialeSelectionsLoaded: boolean = false;
 
     // Ingredients and Steps formset management
     private addIngredientButton: HTMLButtonElement | null = null;
     private addStepButton: HTMLButtonElement | null = null;
 
+    private filtersButton: HTMLButtonElement | null = null;
+    private filtersPanel: HTMLElement | null = null;
+
     
     
     private constructor() {
-        this.mainForm = document.getElementById('recipe-from') as HTMLFormElement;
+        this.mainForm = document.getElementById('recipe-form') as HTMLFormElement;
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
         this.addIngredientButton = document.getElementById('addIngredientButton') as HTMLButtonElement;
         this.addStepButton = document.getElementById('add-step-button') as HTMLButtonElement;
         console.log('Found main form:', this.mainForm !== null);
-        this.setupListeners();
+        this.filtersButton = document.getElementById('filterDropdownBtn') as HTMLButtonElement;
+        this.filtersPanel = document.getElementById('filterDropdownPanel');
+        if(this.mainForm){
+            this.setupListenersForRecipeForm();
+        }
+        if(this.filtersButton){
+            this.setupFiltersButton();
+        }
+        
     }
 
     static getInstance(): RecipeManager {
@@ -37,7 +50,7 @@ class RecipeManager {
         return RecipeManager.instance;
     }
 
-    setupListeners(): void { // Revisit to simplify
+    setupListenersForRecipeForm(): void { // Revisit to simplify
         console.log('Setting up listeners');
         if(this.mainForm){
 
@@ -249,6 +262,35 @@ class RecipeManager {
 
         totalFormsInput.value = (totalForms + 1).toString();
     }
+
+    private setupFiltersButton(): void {
+    if (!this.filtersButton || !this.filtersPanel) {
+        console.error('Filters button or panel not found.');
+        return;
+    }
+
+    this.filtersButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (!this.filtersPanel?.classList.contains('open')) {
+            this.filtersPanel?.classList.add('open');
+            this.filtersButton?.setAttribute('aria-expanded', 'true');
+        } else {
+            this.filtersPanel.classList.remove('open');
+            this.filtersButton?.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (
+            !this.filtersButton?.contains(event.target as Node) &&
+            !this.filtersPanel?.contains(event.target as Node)
+        ) {
+            this.filtersPanel?.classList.remove('open');
+            this.filtersButton?.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
+
 }
 
 // Initialize when the document loads
