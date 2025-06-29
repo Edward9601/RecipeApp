@@ -9,7 +9,7 @@
 </section>
 {% if user.username != 'guest' and user.is_authenticated%}
     <div>
-        <a class="btn btn-primary" href="{% url 'recipes:create' %}">Create sub-recipe</a>
+        <a class="btn btn-primary" href="{% url 'recipes:create_sub_recipe' %}">Create sub-recipe</a>
     </div>
 {% endif %}
 <section>

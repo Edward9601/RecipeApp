@@ -1,15 +1,15 @@
 <h3>Ingredients</h3>
 {{ ingredient_formset.management_form }}
 <div id="ingredient-formset", class="ingredient-container">
-    {% for form in ingredient_formset %}
+    {% for ingredient_form in ingredient_formset %}
         <div class="ingredient-form">
-            {{ form.as_p }}
+            {{ ingredient_form.as_table }}
         </div>
     {% endfor %}
 </div>
 <!-- Empty form (hidden initially) to serve as template for adding new forms -->
 <div id="empty-ingredient-form" style="display: none;" class="hidden">
-    {{ ingredient_formset.empty_form.as_p }}
+    {{ ingredient_formset.empty_form.as_table }}
 </div>
 
 <button type="button" id="addIngredientButton" data-action="add-ingredient" data-formset="ingredient">Add Ingredient</button>
@@ -17,14 +17,14 @@
 <h3>Steps</h3>
 {{ step_formset.management_form }}
 <div id="step-formset">
-    {% for form in step_formset %}
+    {% for step_form in step_formset %}
         <div class="step-form">
-            {{ form.id }}
+            {{ step_form.id }}
             <div>
-                {{ form.order }}
+                {{ step_form.order }}
             </div>
             <div>
-                {{ form.description.label_tag }} {{ form.description }}
+                {{ step_form.description.label_tag }} {{ step_form.description }}
             </div>
         </div>
     {% endfor %}

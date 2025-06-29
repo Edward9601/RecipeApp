@@ -1,11 +1,12 @@
+import { IngredientsAndStepsManager } from './ingredients_and_steps.js';
+
 enum elementIdentifier {
     CATEGORIES = 'categories',
     TAGS = 'tags'
-
 }
-class RecipeManager {
 
-    private static instance: RecipeManager;
+export class RecipeManager {
+
     private mainForm: HTMLFormElement | null = null;
 
     // Cattegories and tags block
@@ -17,37 +18,25 @@ class RecipeManager {
     // Flag to ensure initial selections are loaded only once
     private initialeSelectionsLoaded: boolean = false;
 
-    // Ingredients and Steps formset management
-    private addIngredientButton: HTMLButtonElement | null = null;
-    private addStepButton: HTMLButtonElement | null = null;
-
     private filtersButton: HTMLButtonElement | null = null;
     private filtersPanel: HTMLElement | null = null;
 
     
     
-    private constructor() {
+    constructor() {
         this.mainForm = document.getElementById('recipe-form') as HTMLFormElement;
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
-        this.addIngredientButton = document.getElementById('addIngredientButton') as HTMLButtonElement;
-        this.addStepButton = document.getElementById('add-step-button') as HTMLButtonElement;
-        console.log('Found main form:', this.mainForm !== null);
+
         this.filtersButton = document.getElementById('filterDropdownBtn') as HTMLButtonElement;
         this.filtersPanel = document.getElementById('filterDropdownPanel');
         if(this.mainForm){
             this.setupListenersForRecipeForm();
+            new IngredientsAndStepsManager(this.mainForm);
         }
         if(this.filtersButton){
             this.setupFiltersButton();
         }
         
-    }
-
-    static getInstance(): RecipeManager {
-        if (!RecipeManager.instance) {
-            RecipeManager.instance = new RecipeManager();
-        }
-        return RecipeManager.instance;
     }
 
     setupListenersForRecipeForm(): void { // Revisit to simplify
@@ -64,18 +53,6 @@ class RecipeManager {
                     });
                 }
             }
-            this.addIngredientButton?.addEventListener('click', (event) => {
-                event.preventDefault();
-                console.log('Add ingredient button clicked');
-                this.addIngredientForm();
-            }); 
-
-            this.addStepButton?.addEventListener('click', (event) => {
-                event.preventDefault();
-                console.log('Add step button clicked');
-                this.addStepForm();
-            });
-
             if(this.categoriesAndTagsModal){
 
 
@@ -123,9 +100,7 @@ class RecipeManager {
                 console.log('Modal hidden, updating selections');
                 this.updateFormSelections();
             });
-        }
-
-        
+        }  
     }
 
     private loadInitialSelections(): void {
@@ -186,114 +161,32 @@ class RecipeManager {
         console.log('Hidden inputs updated:', Array.from(selectedElements));
     }
 
-
-    // Ingredients and Steps formset management
-    private addIngredientForm(): void {
-        if(!this.mainForm){
-            console.error('Main form is not initialized.')
-            return;
-        }
-
-        let formsetDiv = this.mainForm.querySelector<HTMLElement>('#ingredient-formset');
-
-        let totalFormsInput = this.mainForm.querySelector<HTMLInputElement>('#id_ingredients-TOTAL_FORMS');
-
-        if (!formsetDiv || !totalFormsInput) {
-            console.error('Formset div or TOTAL_FORMS input not found.');
-            return;
-        }
-        // Get the current total number of forms
-        let totalForms = parseInt(totalFormsInput.value, 10);
-
-        // Get the empty form template, then clone the empty form
-        let emptyFormTemplate = this.mainForm.querySelector<HTMLElement>('#empty-ingredient-form');
-        if (!emptyFormTemplate) {
-            console.error('Empty form template not found.');
-            return;
-        }
-        const newForm = emptyFormTemplate.cloneNode(true) as HTMLElement;
-        newForm.classList.add('ingredient-form');
-        newForm.removeAttribute('id');
-        newForm.style.removeProperty('display');
-        newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, totalForms.toString());
-
-        formsetDiv.appendChild(newForm);
-
-        totalFormsInput.value = (totalForms + 1).toString();
-    }
-    
-    private addStepForm(): void {
-        if (!this.mainForm) {
-            console.error('Main form is not initialized.');
-            return;
-        }
-        const mainForm = this.mainForm;
-        let formsetDiv = mainForm.querySelector<HTMLElement>('#step-formset');
-        let totalFormsInput = mainForm.querySelector<HTMLInputElement>('#id_steps-TOTAL_FORMS');
-        if (!formsetDiv || !totalFormsInput) {
-            console.error('Formset div or TOTAL_FORMS input not found.');
-            return;
-        }
-        let totalForms = parseInt(totalFormsInput.value, 10);
-
-        // Get the empty form template and clone it
-        let emptyFormTemplate = mainForm.querySelector<HTMLElement>('#empty-step-form');
-        if (!emptyFormTemplate) {
-            console.error('Empty form template not found.');
-            return;
-        }
-        const newForm = emptyFormTemplate.cloneNode(true) as HTMLElement;
-        newForm.classList.add('step-form');
-        newForm.removeAttribute('id');
-        newForm.style.removeProperty('display');
-
-        const updatedHTML = newForm.innerHTML.replace(/__prefix__/g, totalForms.toString());
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = updatedHTML;
-
-        const orderInput = tempDiv.querySelector<HTMLInputElement>('input[name$="-order"]');
-        if (orderInput) {
-            orderInput.value = (totalForms + 1).toString();
-        }
-
-        newForm.innerHTML = tempDiv.innerHTML;
-        formsetDiv.appendChild(newForm);
-
-        totalFormsInput.value = (totalForms + 1).toString();
-    }
-
     private setupFiltersButton(): void {
-    if (!this.filtersButton || !this.filtersPanel) {
-        console.error('Filters button or panel not found.');
-        return;
+        if (!this.filtersButton || !this.filtersPanel) {
+            console.error('Filters button or panel not found.');
+            return;
+        }
+
+        this.filtersButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (!this.filtersPanel?.classList.contains('open')) {
+                this.filtersPanel?.classList.add('open');
+                this.filtersButton?.setAttribute('aria-expanded', 'true');
+            } else {
+                this.filtersPanel.classList.remove('open');
+                this.filtersButton?.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (
+                !this.filtersButton?.contains(event.target as Node) &&
+                !this.filtersPanel?.contains(event.target as Node)
+            ) {
+                this.filtersPanel?.classList.remove('open');
+                this.filtersButton?.setAttribute('aria-expanded', 'false');
+            }
+        });
     }
 
-    this.filtersButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (!this.filtersPanel?.classList.contains('open')) {
-            this.filtersPanel?.classList.add('open');
-            this.filtersButton?.setAttribute('aria-expanded', 'true');
-        } else {
-            this.filtersPanel.classList.remove('open');
-            this.filtersButton?.setAttribute('aria-expanded', 'false');
-        }
-    });
-
-    document.addEventListener('click', (event) => {
-        if (
-            !this.filtersButton?.contains(event.target as Node) &&
-            !this.filtersPanel?.contains(event.target as Node)
-        ) {
-            this.filtersPanel?.classList.remove('open');
-            this.filtersButton?.setAttribute('aria-expanded', 'false');
-        }
-    });
 }
-
-}
-
-// Initialize when the document loads
-document.addEventListener('DOMContentLoaded', () => {
-    RecipeManager.getInstance();
-});

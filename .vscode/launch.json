@@ -17,7 +17,7 @@
             "program": "${workspaceFolder}/manage.py",
             "python": "/Users/edwarddumbuya/Documents/Projects/Django/MyWebSite/venv/bin/python"
         },
-        {
+       {
             "type": "chrome",
             "request": "launch",
             "name": "Debug TypeScript",
