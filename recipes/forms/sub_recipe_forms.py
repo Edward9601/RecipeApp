@@ -5,7 +5,7 @@ from ..models.sub_recipe_models import SubRecipe, SubRecipeIngredient, SubRecipe
 class SubRecipeForm(forms.ModelForm):
     class Meta:
         model = SubRecipe
-        fields = ['title', 'note']
+        fields = ['title']
 
 
 class SubRecipeIngredientForm(forms.ModelForm):
@@ -18,3 +18,6 @@ class SubRecipeStepForm(forms.ModelForm):
     class Meta:
         model = SubRecipeStep
         fields = ['description', 'order']
+        widgets = {
+            'order': forms.HiddenInput()
+        }

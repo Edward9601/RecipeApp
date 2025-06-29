@@ -16,7 +16,7 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
     """
     View to display all sub recipes, it also handles search functionality.
     """
-    template_name = 'sub_recipes/sub_recipe.html'
+    template_name = 'sub_recipes/sub_recipe_home.html'
     context_object_name = 'sub_recipes'
 
     def get_context_data(self, **kwargs):
