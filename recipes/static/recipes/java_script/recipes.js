@@ -1,10 +1,10 @@
-"use strict";
+import { IngredientsAndStepsManager } from './ingredients_and_steps.js';
 var elementIdentifier;
 (function (elementIdentifier) {
     elementIdentifier["CATEGORIES"] = "categories";
     elementIdentifier["TAGS"] = "tags";
 })(elementIdentifier || (elementIdentifier = {}));
-class RecipeManager {
+export class RecipeManager {
     constructor() {
         this.mainForm = null;
         // Cattegories and tags block
@@ -14,33 +14,22 @@ class RecipeManager {
         this.categoriesAndTagsModal = null;
         // Flag to ensure initial selections are loaded only once
         this.initialeSelectionsLoaded = false;
-        // Ingredients and Steps formset management
-        this.addIngredientButton = null;
-        this.addStepButton = null;
         this.filtersButton = null;
         this.filtersPanel = null;
         this.mainForm = document.getElementById('recipe-form');
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
-        this.addIngredientButton = document.getElementById('addIngredientButton');
-        this.addStepButton = document.getElementById('add-step-button');
-        console.log('Found main form:', this.mainForm !== null);
         this.filtersButton = document.getElementById('filterDropdownBtn');
         this.filtersPanel = document.getElementById('filterDropdownPanel');
         if (this.mainForm) {
             this.setupListenersForRecipeForm();
+            new IngredientsAndStepsManager(this.mainForm);
         }
         if (this.filtersButton) {
             this.setupFiltersButton();
         }
     }
-    static getInstance() {
-        if (!RecipeManager.instance) {
-            RecipeManager.instance = new RecipeManager();
-        }
-        return RecipeManager.instance;
-    }
     setupListenersForRecipeForm() {
-        var _a, _b, _c;
+        var _a;
         console.log('Setting up listeners');
         if (this.mainForm) {
             const dropdownButton = this.mainForm.querySelector('#subRecipeDropdown');
@@ -52,18 +41,8 @@ class RecipeManager {
                 });
             }
         }
-        (_a = this.addIngredientButton) === null || _a === void 0 ? void 0 : _a.addEventListener('click', (event) => {
-            event.preventDefault();
-            console.log('Add ingredient button clicked');
-            this.addIngredientForm();
-        });
-        (_b = this.addStepButton) === null || _b === void 0 ? void 0 : _b.addEventListener('click', (event) => {
-            event.preventDefault();
-            console.log('Add step button clicked');
-            this.addStepForm();
-        });
         if (this.categoriesAndTagsModal) {
-            if ((_c = this.mainForm) === null || _c === void 0 ? void 0 : _c.action.includes('update')) {
+            if ((_a = this.mainForm) === null || _a === void 0 ? void 0 : _a.action.includes('update')) {
                 console.log('Main form is for updating, loading initial selections');
                 // Add a listener for categories and tags button
                 const categoriesAndTagsButton = this.mainForm.querySelector('#openCategoriesAndTagsButton');
@@ -155,68 +134,6 @@ class RecipeManager {
         });
         console.log('Hidden inputs updated:', Array.from(selectedElements));
     }
-    // Ingredients and Steps formset management
-    addIngredientForm() {
-        if (!this.mainForm) {
-            console.error('Main form is not initialized.');
-            return;
-        }
-        let formsetDiv = this.mainForm.querySelector('#ingredient-formset');
-        let totalFormsInput = this.mainForm.querySelector('#id_ingredients-TOTAL_FORMS');
-        if (!formsetDiv || !totalFormsInput) {
-            console.error('Formset div or TOTAL_FORMS input not found.');
-            return;
-        }
-        // Get the current total number of forms
-        let totalForms = parseInt(totalFormsInput.value, 10);
-        // Get the empty form template, then clone the empty form
-        let emptyFormTemplate = this.mainForm.querySelector('#empty-ingredient-form');
-        if (!emptyFormTemplate) {
-            console.error('Empty form template not found.');
-            return;
-        }
-        const newForm = emptyFormTemplate.cloneNode(true);
-        newForm.classList.add('ingredient-form');
-        newForm.removeAttribute('id');
-        newForm.style.removeProperty('display');
-        newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, totalForms.toString());
-        formsetDiv.appendChild(newForm);
-        totalFormsInput.value = (totalForms + 1).toString();
-    }
-    addStepForm() {
-        if (!this.mainForm) {
-            console.error('Main form is not initialized.');
-            return;
-        }
-        const mainForm = this.mainForm;
-        let formsetDiv = mainForm.querySelector('#step-formset');
-        let totalFormsInput = mainForm.querySelector('#id_steps-TOTAL_FORMS');
-        if (!formsetDiv || !totalFormsInput) {
-            console.error('Formset div or TOTAL_FORMS input not found.');
-            return;
-        }
-        let totalForms = parseInt(totalFormsInput.value, 10);
-        // Get the empty form template and clone it
-        let emptyFormTemplate = mainForm.querySelector('#empty-step-form');
-        if (!emptyFormTemplate) {
-            console.error('Empty form template not found.');
-            return;
-        }
-        const newForm = emptyFormTemplate.cloneNode(true);
-        newForm.classList.add('step-form');
-        newForm.removeAttribute('id');
-        newForm.style.removeProperty('display');
-        const updatedHTML = newForm.innerHTML.replace(/__prefix__/g, totalForms.toString());
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = updatedHTML;
-        const orderInput = tempDiv.querySelector('input[name$="-order"]');
-        if (orderInput) {
-            orderInput.value = (totalForms + 1).toString();
-        }
-        newForm.innerHTML = tempDiv.innerHTML;
-        formsetDiv.appendChild(newForm);
-        totalFormsInput.value = (totalForms + 1).toString();
-    }
     setupFiltersButton() {
         if (!this.filtersButton || !this.filtersPanel) {
             console.error('Filters button or panel not found.');
@@ -244,8 +161,4 @@ class RecipeManager {
         });
     }
 }
-// Initialize when the document loads
-document.addEventListener('DOMContentLoaded', () => {
-    RecipeManager.getInstance();
-});
 //# sourceMappingURL=recipes.js.map

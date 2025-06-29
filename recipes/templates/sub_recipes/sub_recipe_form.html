@@ -3,7 +3,7 @@
 {% load static %}
 {% block content %}
 <div class="container">
-    <form method="POST" action="{% if object %}{% url 'recipes:update_sub_recipe' object.id %}
+    <form id='sub-recipe-form' method="POST" action="{% if object %}{% url 'recipes:update_sub_recipe' object.id %}
     {% else %}
     {% url 'recipes:create_sub_recipe' %}{% endif %}" 
      autocomplete="off" enctype="multipart/form-data">
@@ -14,4 +14,5 @@
      </div>
     </form>
 </div>
+<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
 {% endblock %}
