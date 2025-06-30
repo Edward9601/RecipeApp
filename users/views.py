@@ -21,6 +21,8 @@ class UserRegistrationView(CreateView):
         response = super().form_valid(form)
         username = form.cleaned_data.get('username')
         messages.success(self.request, f'Account created for {username}!')
+        user = form.save()
+        login(self.request, user)
         return response
     
 
