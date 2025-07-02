@@ -15,20 +15,33 @@ on how to prepopulate Category table with initial data.
 """
 
 class Category(models.Model): 
-    name = models.CharField(max_length=30, unique=True)
+    """"
+    Model to represent recipe categories.
+    Categories can be used to group recipes by type, cuisine, or any other classification.
+    """
+    name = models.CharField(max_length=15, unique=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 class Tag(models.Model):
-    name = models.CharField(max_length=30, unique=True)
+    """
+    Model to represent recipe tags.
+    Tags can be used to add additional metadata to recipes, such as dietary restrictions, flavor profiles
+    """
+    name = models.CharField(max_length=15, unique=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 
 class Recipe(BaseRecipe):
+    """
+    Model to represent a recipe.
+    Recipes can have multiple ingredients, steps, sub-recipes.
+    They can also be categorized and tagged for better organization.
+    """
     description = models.TextField(blank=True, null=True)
     sub_recipes = models.ManyToManyField(SubRecipe, through='RecipeSubRecipe',
                                          related_name='main_recipes', blank=True)
@@ -37,7 +50,12 @@ class Recipe(BaseRecipe):
 
 
 class RecipeImage(AbstractImageModel):
+    """
+    Model to represent images associated with a recipe.
+    """
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='images')
+
+    thumbnail_folder = 'recipes_pictures_thumbs_medium'
 
     def save(self, *args, **kwargs):
         if self.picture and hasattr(self, 'recipe') and self.recipe:
@@ -51,11 +69,22 @@ class RecipeImage(AbstractImageModel):
             super().save(*args, **kwargs)
             # Create thumbnail after saving the image
             if self.picture:
-                folder = 'recipes_pictures_thumbs_medium'
-                self.create_thumbnail(folder, new_name, size=(600, 600), )
+                self.create_thumbnail(self.thumbnail_folder, new_name, size=(600, 600))
+
+    def get_thumbnail_url(self,):
+
+        """
+        Returns the URL of the thumbnail image.
+        If a folder is provided, it will use that folder; otherwise, it will use the default thumbnail folder.
+        """
+        return super().get_thumbnail_url(self.thumbnail_folder)
     
 
 class RecipeSubRecipe(models.Model):
+    """
+    Intermediate model to represent the relationship between a recipe and its sub-recipes.
+    This allows for a many-to-many relationship where a recipe can have multiple sub-recipes
+    and a sub-recipe can be part of multiple recipes."""
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='linked_recipes')
     sub_recipe = models.ForeignKey(SubRecipe, on_delete=models.CASCADE, related_name='linked_sub_recipes')
 
@@ -66,18 +95,21 @@ class RecipeSubRecipe(models.Model):
 
 
 class RecipeIngredient(Ingredient):
+    """
+    Model to represent ingredients in a recipe.
+    Ingredients can have a name, quantity, and measurement unit.
+    The recipe field establishes a many-to-one relationship with the Recipe model.
+    """
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='ingredients')
 
 
-    def __str__(self) -> str:
-        quantity_display = self.quantity if self.quantity not in [None, 'None'] else ''
-        measurement_display = self.measurement if self.measurement not in [None, 'None'] else ''
-        return f'{quantity_display} {measurement_display} {self.name}'.strip()
-    
-
 class RecipeStep(Step):
+    """
+    Model to represent steps in a recipe.
+    Steps can have an order and a description of the action to be performed.
+    The order field is used to determine the sequence of steps in the recipe.
+    """
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='steps')
-
 
 
 # Signal handler to delete the image file before the model instance is deleted

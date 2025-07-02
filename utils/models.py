@@ -49,9 +49,8 @@ class AbstractImageModel(models.Model):
         default_storage.save(thumb_name, ContentFile(buffer.read()))
         return thumb_name
 
-    def get_thumbnail_url(self):
+    def get_thumbnail_url(self, folder):
         if self.picture:
-            folder='recipes_pictures_thumbs_medium'
             base, ext = os.path.splitext(os.path.basename(self.picture.name))
             # This assumes you use the same naming as in create_thumbnail
             thumb_name = f"{folder}/{base}.{ext.lstrip('.')}"
