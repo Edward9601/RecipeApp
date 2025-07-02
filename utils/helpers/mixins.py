@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 from django.contrib import messages
 
-from helpers.constants import GUEST_USER_NAME
+from utils.helpers.constants import GUEST_USER_NAME
 
 
 class RegisteredUserAuthRequired:

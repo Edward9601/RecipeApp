@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
-from ..forms.recipe_forms import RecipeForm, RecipeIngredientForm, RecipeStepForm
+from ..forms.recipe_forms import RecipeHomeForm, RecipeIngredientForm, RecipeStepForm
 from ..forms.sub_recipe_forms import SubRecipeForm, SubRecipeIngredientForm, SubRecipeStepForm
 from ..models.recipe_models import Recipe
 from ..models.sub_recipe_models import SubRecipe
@@ -28,7 +28,7 @@ class RecipeFormTests(TestCase):
             'description': 'This is a test recipe description',
             'picture': self.test_image
         }
-        form = RecipeForm(data=form_data)
+        form = RecipeHomeForm(data=form_data)
         self.assertTrue(form.is_valid())
 
     def test_recipe_form_invalid_data(self):
@@ -37,7 +37,7 @@ class RecipeFormTests(TestCase):
             'title': '',  # Empty title should be invalid
             'description': 'This is a test recipe description'
         }
-        form = RecipeForm(data=form_data)
+        form = RecipeHomeForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('title', form.errors)
 
@@ -47,7 +47,7 @@ class RecipeFormTests(TestCase):
             'title': 'Test Recipe',
             'description': 'This is a test recipe description'
         }
-        form = RecipeForm(data=form_data)
+        form = RecipeHomeForm(data=form_data)
         self.assertTrue(form.is_valid())
 
 class RecipeIngredientFormTests(TestCase):

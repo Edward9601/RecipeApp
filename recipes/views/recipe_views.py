@@ -7,7 +7,7 @@ from django.core.cache import cache
 from .base_views import BaseRecipeView, BaseViewForDataUpdate
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
 from ..forms.recipe_filter_forms import RecipeFilterForm
-from helpers.mixins import RegisteredUserAuthRequired
+from utils.helpers.mixins import RegisteredUserAuthRequired
 
 class RecipeListView(BaseRecipeView, ListView):
     """
@@ -114,7 +114,7 @@ class RecipeCreateView(RegisteredUserAuthRequired, BaseViewForDataUpdate, Create
         success = BaseViewForDataUpdate.form_valid(self, form)
         if not success:
             return self.form_invalid(form)
-        print(form.cleaned_data)
+
         # Handle sub-recipes
         sub_recipes = form.cleaned_data.get('sub_recipes')
         if sub_recipes:
@@ -171,6 +171,7 @@ class RecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     """
     model = Recipe
     success_url = reverse_lazy('recipes:home')
+
 
 
 def get_categories_and_tags(request):

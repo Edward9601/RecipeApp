@@ -6,7 +6,7 @@ from .forms import UserRegistrationForm, LoginForm
 from django.views.generic import CreateView
 from django.contrib.auth.views import LogoutView, LoginView
 from django.contrib.auth.models import User
-from helpers.constants import GUEST_USER_NAME
+from utils.helpers.constants import GUEST_USER_NAME
 
 class UserRegistrationView(CreateView):
     """
