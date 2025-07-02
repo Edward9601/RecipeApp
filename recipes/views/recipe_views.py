@@ -172,6 +172,14 @@ class RecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     model = Recipe
     success_url = reverse_lazy('recipes:home')
 
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        # Invalidate cache for this recipe and the recipe list
+        cache_key_detail = f'recipe_detail_{self.object.id}'
+        cache.delete(cache_key_detail)
+        cache.delete('recipe_list_queryset')
+        return super().delete(request, *args, **kwargs)
+
 
 
 def get_categories_and_tags(request):
