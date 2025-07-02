@@ -1,12 +1,17 @@
 from django import forms
 
-from ..models.recipe_models import Recipe, RecipeIngredient, RecipeStep, Tag, Category
+from ..models.recipe_models import Recipe, RecipeIngredient, RecipeStep, Tag, Category, RecipeImage
 
 
-class RecipeForm(forms.ModelForm):
+class RecipeImageForm(forms.ModelForm):
+    class Meta:
+        model = RecipeImage
+        fields = ['picture']
+
+class RecipeHomeForm(forms.ModelForm):
     class Meta:
         model = Recipe
-        fields = ['title', 'description', 'picture']  # TODO add 'note' when will be needed
+        fields = ['title', 'description']
 
 
 class RecipeCreateForm(forms.ModelForm):
@@ -26,20 +31,16 @@ class RecipeCreateForm(forms.ModelForm):
 
     class Meta:
         model = Recipe
-        fields = ['title', 'description', 'picture', 'sub_recipes', 'categories', 'tags']
+        fields = ['title', 'description', 'sub_recipes', 'categories', 'tags'] 
         widgets = {
             'sub_recipes': forms.CheckboxSelectMultiple(),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        print("Form initialized with data:", self.data if hasattr(self, 'data') else "No data")
 
         
 class RecipeDetailForm(forms.ModelForm):
     class Meta:
         model = Recipe
-        fields = ['title', 'description', 'picture', 'note']
+        fields = ['title', 'description', 'note']
 
 
 class RecipeIngredientForm(forms.ModelForm):

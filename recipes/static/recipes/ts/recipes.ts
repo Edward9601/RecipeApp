@@ -18,25 +18,15 @@ export class RecipeManager {
     // Flag to ensure initial selections are loaded only once
     private initialeSelectionsLoaded: boolean = false;
 
-    private filtersButton: HTMLButtonElement | null = null;
-    private filtersPanel: HTMLElement | null = null;
-
-    
     
     constructor() {
         this.mainForm = document.getElementById('recipe-form') as HTMLFormElement;
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
 
-        this.filtersButton = document.getElementById('filterDropdownBtn') as HTMLButtonElement;
-        this.filtersPanel = document.getElementById('filterDropdownPanel');
         if(this.mainForm){
             this.setupListenersForRecipeForm();
             new IngredientsAndStepsManager(this.mainForm);
-        }
-        if(this.filtersButton){
-            this.setupFiltersButton();
-        }
-        
+        }        
     }
 
     setupListenersForRecipeForm(): void { // Revisit to simplify
@@ -160,33 +150,4 @@ export class RecipeManager {
         });
         console.log('Hidden inputs updated:', Array.from(selectedElements));
     }
-
-    private setupFiltersButton(): void {
-        if (!this.filtersButton || !this.filtersPanel) {
-            console.error('Filters button or panel not found.');
-            return;
-        }
-
-        this.filtersButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            if (!this.filtersPanel?.classList.contains('open')) {
-                this.filtersPanel?.classList.add('open');
-                this.filtersButton?.setAttribute('aria-expanded', 'true');
-            } else {
-                this.filtersPanel.classList.remove('open');
-                this.filtersButton?.setAttribute('aria-expanded', 'false');
-            }
-        });
-
-        document.addEventListener('click', (event) => {
-            if (
-                !this.filtersButton?.contains(event.target as Node) &&
-                !this.filtersPanel?.contains(event.target as Node)
-            ) {
-                this.filtersPanel?.classList.remove('open');
-                this.filtersButton?.setAttribute('aria-expanded', 'false');
-            }
-        });
-    }
-
 }

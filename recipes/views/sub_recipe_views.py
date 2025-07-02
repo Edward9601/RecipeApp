@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.core.cache import cache
 from django.forms import inlineformset_factory
 
-from helpers.mixins import RegisteredUserAuthRequired
+from utils.helpers.mixins import RegisteredUserAuthRequired
 
 from .base_views import BaseSubRecipeView
 

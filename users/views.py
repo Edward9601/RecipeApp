@@ -6,7 +6,7 @@ from .forms import UserRegistrationForm, LoginForm
 from django.views.generic import CreateView
 from django.contrib.auth.views import LogoutView, LoginView
 from django.contrib.auth.models import User
-from helpers.constants import GUEST_USER_NAME
+from utils.helpers.constants import GUEST_USER_NAME
 
 class UserRegistrationView(CreateView):
     """
@@ -21,6 +21,8 @@ class UserRegistrationView(CreateView):
         response = super().form_valid(form)
         username = form.cleaned_data.get('username')
         messages.success(self.request, f'Account created for {username}!')
+        user = form.save()
+        login(self.request, user)
         return response
     
 

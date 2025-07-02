@@ -1,7 +1,7 @@
-from ..models.recipe_models import Recipe, RecipeSubRecipe, RecipeStep, RecipeIngredient, Category, Tag
+from ..models.recipe_models import Recipe, RecipeSubRecipe, RecipeStep, RecipeIngredient, Category, Tag, RecipeImage
 from ..models.sub_recipe_models import SubRecipe
 from django.views.generic import CreateView
-from ..forms.recipe_forms import RecipeIngredientForm, RecipeStepForm, RecipeForm, RecipeCreateForm
+from ..forms.recipe_forms import RecipeIngredientForm, RecipeStepForm, RecipeHomeForm, RecipeCreateForm, RecipeImageForm
 from ..forms.sub_recipe_forms import SubRecipeForm
 from django.forms import inlineformset_factory
 from django import forms
@@ -12,7 +12,7 @@ class BaseRecipeView():
     Base view for recipes to extend
     """
     model = Recipe
-    form_class = RecipeForm
+    form_class = RecipeHomeForm
     intermediate_table = RecipeSubRecipe
 
 
@@ -21,6 +21,7 @@ class BaseViewForDataUpdate(BaseRecipeView): # TODO: Refactor this to be more ge
     Base view to handle create and update operation on recipes.
     """
     form_class = RecipeCreateForm
+    image_from = RecipeImageForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -42,6 +43,11 @@ class BaseViewForDataUpdate(BaseRecipeView): # TODO: Refactor this to be more ge
         else:
             context['ingredient_formset'] = ingredient_form_set(instance=self.object, prefix='ingredients')
             context['step_formset'] = step_form_set(instance=self.object, prefix='steps', initial=initial_data)
+            # Initialize image form with existing RecipeImage instance if it exists
+            existing_image = None
+            if self.object:
+                existing_image = RecipeImage.objects.filter(recipe=self.object).first()
+            context['image_from'] = self.image_from(instance=existing_image)
 
         context['categories'] = Category.objects.all()
         context['tags'] = Tag.objects.all()
@@ -69,6 +75,10 @@ class BaseViewForDataUpdate(BaseRecipeView): # TODO: Refactor this to be more ge
    
             self.object.categories.set(category_ids)
             self.object.tags.set(tag_ids)
+
+            if 'picture' in self.request.FILES:
+                image = RecipeImage(recipe=self.object, picture=self.request.FILES['picture'])
+                image.save()  # Save the image to create the thumbnail
 
             return True  # Signal success
         return False  # Signal failure

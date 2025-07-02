@@ -68,7 +68,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django_htmx',
-    'storages',
+    'storages', # For S3 storage
+    'utils.apps.UtilsConfig',
 ]
 
 
@@ -155,7 +156,6 @@ def get_db_config():
             'HOST': os.getenv('DB_HOST'),
             'PORT': os.getenv('DB_PORT', 5432),
         }
-
 try:
     DATABASES = {
         'default': get_db_config()
@@ -198,7 +198,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
