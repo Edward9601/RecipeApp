@@ -18,10 +18,13 @@ export class RecipeManager {
     // Flag to ensure initial selections are loaded only once
     private initialeSelectionsLoaded: boolean = false;
 
+    private imagePreview: HTMLImageElement | null = null;
+
     
     constructor() {
         this.mainForm = document.getElementById('recipe-form') as HTMLFormElement;
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
+        this.imagePreview = document.getElementById('image-preview') as HTMLImageElement;
 
         if(this.mainForm){
             this.setupListenersForRecipeForm();
@@ -30,7 +33,6 @@ export class RecipeManager {
     }
 
     setupListenersForRecipeForm(): void { // Revisit to simplify
-        console.log('Setting up listeners');
         if(this.mainForm){
 
             const dropdownButton = this.mainForm.querySelector<HTMLButtonElement>('#subRecipeDropdown');
@@ -47,13 +49,13 @@ export class RecipeManager {
 
 
                 if(this.mainForm?.action.includes('update')){
-                    console.log('Main form is for updating, loading initial selections');
+                   
                     // Add a listener for categories and tags button
                     const categoriesAndTagsButton = this.mainForm.querySelector<HTMLButtonElement>('#openCategoriesAndTagsButton');
-                    console.log('Found categories and tags button:', categoriesAndTagsButton !== null);
+                   
                     if (categoriesAndTagsButton && !this.initialeSelectionsLoaded) {
                         categoriesAndTagsButton.addEventListener('click', () => {
-                            console.log('Categories and Tags button clicked');
+                        
                             this.loadInitialSelections();});
 
                             // Load initial selections only once
@@ -72,7 +74,6 @@ export class RecipeManager {
                         else {
                             this.selectedCategories.delete(value);
                         }
-                        console.log('Categories updated:', Array.from(this.selectedCategories));
                     }
                     else if(target.id.startsWith('id_tags_')){
                         if(target.checked){
@@ -81,30 +82,33 @@ export class RecipeManager {
                         else{
                             this.selectedTags.delete(value);
                         }
-                        console.log('Tags updated:', Array.from(this.selectedTags));
                     }
                 }
             });
             // Update selections when modal is hidden
             this.categoriesAndTagsModal.addEventListener('hidden.bs.modal', () => {
-                console.log('Modal hidden, updating selections');
                 this.updateFormSelections();
             });
+            if(this.imagePreview && this.mainForm){
+                const fileInput = this.mainForm.querySelector<HTMLInputElement>('input[id="id_picture"]');
+                if(fileInput){
+                    fileInput.addEventListener('change', () => {
+                        RecipeManager.previewImage(fileInput, this.imagePreview);
+                    });
+                }
+            }
         }  
     }
 
     private loadInitialSelections(): void {
 
         if (!this.categoriesAndTagsModal) {
-            console.warn('Modal not found. Cannot load initial selections.');
             return;
         }
-        console.log('Loading initial selections');
         // Load initial state from form
         const categoryInputs = this.categoriesAndTagsModal.querySelectorAll<HTMLInputElement>('input[id^="id_categories_"]');
         const tagInputs = this.categoriesAndTagsModal.querySelectorAll<HTMLInputElement>('input[id^="id_tags_"]');
 
-        console.log(`Found ${categoryInputs.length} category inputs and ${tagInputs.length} tag inputs`);
 
         categoryInputs.forEach(input => {
             if (input.checked) {
@@ -148,6 +152,26 @@ export class RecipeManager {
         input.value = id.toString();
         checkboxes?.appendChild(input);
         });
-        console.log('Hidden inputs updated:', Array.from(selectedElements));
+    }
+
+    private static previewImage(fileInput: HTMLInputElement, imagePreview: HTMLImageElement | null): void {
+        if (!fileInput || !imagePreview) {
+            return;
+        }
+        
+        const file = fileInput.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                if (event.target && event.target.result) {
+                    imagePreview.src = event.target.result as string;
+                    imagePreview.style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.src = '';
+            imagePreview.style.display = 'none';
+        }
     }
 }

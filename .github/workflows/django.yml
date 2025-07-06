@@ -6,7 +6,22 @@ on: # Triggering events
     branches: [ main, develop ]
 
 jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set continue flag
+        id: check
+        run: |
+          if [[ "${{ github.event.pull_request.base.ref }}" == "main" && "${{ github.event.pull_request.head.ref }}" == "develop" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
   build:
+    needs: check-branch
+    if: needs.check-branch.outputs.skip == 'false'
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -48,4 +63,3 @@ jobs:
         USER: ${{ secrets.USER }}
       run: |
         python manage.py test
-

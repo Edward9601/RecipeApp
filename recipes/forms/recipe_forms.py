@@ -70,11 +70,11 @@ class RecipeStepForm(forms.ModelForm):
         }
 
 
-def fetch_ingredients_and_steps_formsets():
+def fetch_ingredients_and_steps_formsets(extra_forms=0):
     """
     Returns the ingredient and step formsets for a given recipe instance.
     """    
-    IngredientFormSet = inlineformset_factory(Recipe, RecipeIngredient,extra=0, form=RecipeIngredientForm, can_delete=True)
-    StepsFormSet = inlineformset_factory(Recipe, RecipeStep,extra=0, form=RecipeStepForm, can_delete=True)
+    IngredientFormSet = inlineformset_factory(Recipe, RecipeIngredient,extra=extra_forms, form=RecipeIngredientForm, can_delete=True)
+    StepsFormSet = inlineformset_factory(Recipe, RecipeStep,extra=extra_forms, form=RecipeStepForm, can_delete=True)
     return IngredientFormSet, StepsFormSet
 

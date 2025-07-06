@@ -4,19 +4,19 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.core.cache import cache
 
-from .base_views import BaseRecipeView
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
-from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm
+from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm
 from ..forms.recipe_filter_forms import RecipeFilterForm
 from utils.helpers.mixins import RegisteredUserAuthRequired
 
 from ..handlers import recipes_handler
 
-class RecipeListView(BaseRecipeView, ListView):
+class RecipeListView(ListView):
     """
     View to display all recipes
     """
-
+    model = Recipe
+    form_class = RecipeHomeForm
     template_name = 'recipes/home.html'
     context_object_name = 'recipes'
     paginate_by = 12
@@ -76,10 +76,12 @@ class RecipeListView(BaseRecipeView, ListView):
         return render(request, 'partials/recipe_list.html', {'recipes': recipes})
 
 
-class RecipeDetailView(BaseRecipeView, DetailView):
+class RecipeDetailView(DetailView):
     """
     View for recipe details, also displays related recipes
     """
+    model = Recipe
+    form_class = RecipeHomeForm
 
     def get_object(self, queryset=None):
         # Try to get cached data
@@ -119,9 +121,9 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.request.POST:
-            context.update(recipes_handler.populate_context_data_for_post(self))
+            context.update(recipes_handler.get_recipe_context_data_post(self.object, self.request, self.image_form))
         else:
-            context.update(recipes_handler.populate_context_data_for_get(self))
+            context.update(recipes_handler.get_recipe_context_data_get(self.object, self.image_form, extra_forms=1))
         return context
 
     def form_valid(self, form):
@@ -180,9 +182,9 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
 
         image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
         if self.request.POST:
-            context.update(recipes_handler.populate_context_data_for_post(self, image_instance))
+            context.update(recipes_handler.get_recipe_context_data_post(self, image_instance))
         else:
-            context.update(recipes_handler.populate_context_data_for_get(self, image_instance))
+            context.update(recipes_handler.get_recipe_context_data_get(self, image_instance))
         return context
 
     def get_form(self, form_class=None):
@@ -249,8 +251,11 @@ class RecipeDeleteView(DeleteView):
     success_url = reverse_lazy('recipes:home')
 
     def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        print('test')
+        """ 
+        Handles the deletion of a recipe.
+        This method overrides the default delete method to ensure that the recipe is deleted
+        and the cache is invalidated for both the recipe detail and the recipe list.
+        """
         # Invalidate cache for this recipe and the recipe list
         cache_key_detail = f'recipe_detail_{self.object.id}'
         invalidate_recipe_cache(cache_key_detail)
@@ -259,7 +264,11 @@ class RecipeDeleteView(DeleteView):
     
 
     def post(self, request, *args, **kwargs):
-        print("POST method hit")
+        """
+        Handles the POST request for deleting a recipe.
+        This method overrides the default post method to ensure that the recipe is deleted
+        and the cache is invalidated for both the recipe detail and the recipe list.
+        """
         return self.delete(request, *args, **kwargs)
 
 
