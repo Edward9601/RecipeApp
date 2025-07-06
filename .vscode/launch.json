@@ -22,7 +22,7 @@
             "request": "launch",
             "name": "Debug TypeScript",
             "url": "http://localhost:8000",
-            "webRoot": "${workspaceFolder}/recipes/static/recipes/ts",
+            "webRoot": "${workspaceFolder}/recipes/static/recipes",
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/recipes/static/recipes/java_script/*.js"

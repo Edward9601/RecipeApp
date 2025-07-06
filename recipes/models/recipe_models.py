@@ -6,8 +6,6 @@ from utils.models import AbstractImageModel
 from .sub_recipe_models import SubRecipe
 from .base_models import BaseRecipe, Ingredient, Step
 
-import os
-import uuid
 
 """
 When first migration is ran go to recipes/management/commands/populate_categories.py to see instractions 
@@ -57,20 +55,6 @@ class RecipeImage(AbstractImageModel):
 
     thumbnail_folder = 'recipes_pictures_thumbs_medium'
 
-    def save(self, *args, **kwargs):
-        if self.picture and hasattr(self, 'recipe') and self.recipe:
-            orig = self.picture
-            ext = os.path.splitext(orig.name)[1]
-            base_name = self.slugify(self.recipe.title)
-            unique_id = uuid.uuid4().hex[:8]
-            new_name = f'{base_name}_{unique_id}{ext}'
-            self.picture.name = new_name
-
-            super().save(*args, **kwargs)
-            # Create thumbnail after saving the image
-            if self.picture:
-                self.create_thumbnail(self.thumbnail_folder, new_name, size=(600, 600))
-
     def get_thumbnail_url(self,):
 
         """
@@ -115,5 +99,5 @@ class RecipeStep(Step):
 # Signal handler to delete the image file before the model instance is deleted
 @receiver(pre_delete, sender=Recipe)
 def delete_image_on_delete_model(sender, instance, **kwargs):
-    if instance.picture:
-        instance.picture.delete(save=False)
+    if instance.images.exists():
+        instance.images.all().delete()
