@@ -14,8 +14,10 @@ export class RecipeManager {
         this.categoriesAndTagsModal = null;
         // Flag to ensure initial selections are loaded only once
         this.initialeSelectionsLoaded = false;
+        this.imagePreview = null;
         this.mainForm = document.getElementById('recipe-form');
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
+        this.imagePreview = document.getElementById('image-preview');
         if (this.mainForm) {
             this.setupListenersForRecipeForm();
             new IngredientsAndStepsManager(this.mainForm);
@@ -36,13 +38,10 @@ export class RecipeManager {
         }
         if (this.categoriesAndTagsModal) {
             if ((_a = this.mainForm) === null || _a === void 0 ? void 0 : _a.action.includes('update')) {
-                console.log('Main form is for updating, loading initial selections');
                 // Add a listener for categories and tags button
                 const categoriesAndTagsButton = this.mainForm.querySelector('#openCategoriesAndTagsButton');
-                console.log('Found categories and tags button:', categoriesAndTagsButton !== null);
                 if (categoriesAndTagsButton && !this.initialeSelectionsLoaded) {
                     categoriesAndTagsButton.addEventListener('click', () => {
-                        console.log('Categories and Tags button clicked');
                         this.loadInitialSelections();
                     });
                     // Load initial selections only once
@@ -78,6 +77,14 @@ export class RecipeManager {
                 console.log('Modal hidden, updating selections');
                 this.updateFormSelections();
             });
+            if (this.imagePreview && this.mainForm) {
+                const fileInput = this.mainForm.querySelector('input[id="id_picture"]');
+                if (fileInput) {
+                    fileInput.addEventListener('change', () => {
+                        RecipeManager.previewImage(fileInput, this.imagePreview);
+                    });
+                }
+            }
         }
     }
     loadInitialSelections() {
@@ -126,6 +133,28 @@ export class RecipeManager {
             checkboxes === null || checkboxes === void 0 ? void 0 : checkboxes.appendChild(input);
         });
         console.log('Hidden inputs updated:', Array.from(selectedElements));
+    }
+    static previewImage(fileInput, imagePreview) {
+        var _a;
+        if (!fileInput || !imagePreview) {
+            console.error('File input or image preview element not found.');
+            return;
+        }
+        const file = (_a = fileInput.files) === null || _a === void 0 ? void 0 : _a[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                if (event.target && event.target.result) {
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        else {
+            imagePreview.src = '';
+            imagePreview.style.display = 'none';
+        }
     }
 }
 //# sourceMappingURL=recipes.js.map

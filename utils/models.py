@@ -36,6 +36,7 @@ class AbstractImageModel(models.Model):
     def create_thumbnail(self, folder, image_name, size=(600, 600)):
         if not self.picture:
             return
+        image_name = image_name.split('/')[1]
         self.picture.seek(0)
         img = Image.open(self.picture)
         img = self.fix_image_orientation(img)

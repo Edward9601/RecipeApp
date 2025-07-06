@@ -31,8 +31,15 @@ AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME")
-AWS_S3_FILE_OVERWRITE = False
+AWS_S3_FILE_OVERWRITE = True
 AWS_DEFAULT_ACL = None
+
+AWS_S3_OBJECT_PARAMETERS ={
+    'CacheControl': 'max-age=0,' # File will not be cached
+                    'no-cache,' # Browser must revalidate with the server
+                    'no-store,' # Do not store the file in cache
+                    'must-revalidate' # Must revalidate with the server before using the file
+}
 
 STORAGES = {
     # Configuration for image hosting on S3
@@ -63,13 +70,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'recipes.apps.RecipesConfig',
     'users.apps.UsersConfig',
+    'utils.apps.UtilsConfig',
+
     'crispy_forms',
     'crispy_bootstrap5',
     'django_htmx',
     'storages', # For S3 storage
-    'utils.apps.UtilsConfig',
+    
 ]
 
 
@@ -129,7 +139,7 @@ def get_db_config():
             'PORT': '5432'
         }
     
-    if 'development' == 'development':
+    if ENV == 'development':
         print('connecting to neaon')
         db_url = os.getenv("DATABASE_URL")
         if not db_url:

@@ -1,4 +1,5 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import render
 
@@ -7,15 +8,15 @@ from django.forms import inlineformset_factory
 
 from utils.helpers.mixins import RegisteredUserAuthRequired
 
-from .base_views import BaseSubRecipeView
-
 from ..models.sub_recipe_models import SubRecipeIngredient, SubRecipeStep, SubRecipe
-from ..forms.sub_recipe_forms import SubRecipeIngredientForm, SubRecipeStepForm
+from ..forms.sub_recipe_forms import SubRecipeIngredientForm, SubRecipeStepForm, SubRecipeForm
 
-class SubRecipeListView(BaseSubRecipeView, ListView):
+class SubRecipeListView(ListView):
     """
     View to display all sub recipes, it also handles search functionality.
     """
+    model = SubRecipe
+    form_class = SubRecipeForm
     template_name = 'sub_recipes/sub_recipe_home.html'
     context_object_name = 'sub_recipes'
 
@@ -57,10 +58,12 @@ class SubRecipeListView(BaseSubRecipeView, ListView):
         return render(request, 'partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
 
 
-class SubRecipeCreateView(RegisteredUserAuthRequired, BaseSubRecipeView, CreateView):
+class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     """"
     View to create sub recipes, it also handles the creation of ingredients and steps in the sub recipe.
     """
+    model = SubRecipe
+    form_class = SubRecipeForm
     template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
@@ -93,14 +96,17 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, BaseSubRecipeView, CreateV
             steps_formset.save()
         else:
             return super().form_invalid(form)
-
+        # Invalidate cache for the sub recipe list
+        invalidate_recipe_cache()
         return super().form_valid(form)
 
 
-class SubRecipeDetailView(BaseSubRecipeView, DetailView):
+class SubRecipeDetailView(DetailView):
     """"
     View for sub recipe details, also displays related main recipes.
     """
+    model = SubRecipe
+    form_class = SubRecipeForm
     template_name = 'sub_recipes/subrecipe_detail.html'
 
     def get_object(self, queryset=None):
@@ -115,6 +121,9 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
     
 
     def get_context_data(self, **kwargs):
+        """
+        Adds additional context to the template, including whether the user can edit the recipe.
+        """
         context = super().get_context_data(**kwargs)
         context['can_edit'] = self.can_edit_recipe()
         return context
@@ -126,10 +135,12 @@ class SubRecipeDetailView(BaseSubRecipeView, DetailView):
         return self.request.user.id == self.object.author.id or self.request.user.is_staff or self.request.user.is_superuser
 
 
-class SubRecipeUpdateView(RegisteredUserAuthRequired, BaseSubRecipeView, UpdateView):
+class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     """
     View to update sub recipes.
     """
+    model = SubRecipe
+    form_class = SubRecipeForm
     template_name = 'sub_recipes/recipe_form.html'
 
     def get_context_data(self, **kwargs):
@@ -166,6 +177,9 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, BaseSubRecipeView, UpdateV
             form.save()
         else:
             return self.form_invalid(form)
+        # Invalidate cache for the sub recipe list
+        recipe_id = self.object.id
+        invalidate_recipe_cache(recipe_id)
         return super().form_valid(form)
 
 
@@ -176,3 +190,35 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     template_name = 'sub_recipes/subrecipe_confirm_delete.html'
     model = SubRecipe
     success_url = reverse_lazy('sub_recipes')
+
+    def delete(self, request, *args, **kwargs):
+        """ 
+        Handles the deletion of a sub recipe.
+        This method overrides the default delete method to ensure that the sin recipe is deleted
+        and the cache is invalidated for both the detail and list sub recipes.
+        """
+        # Invalidate cache for this recipe and the recipe list
+        cache_key_detail = f'recipe_detail_{self.object.id}'
+        invalidate_recipe_cache(cache_key_detail)
+
+        return super().delete(request, *args, **kwargs)
+    
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles the POST request for deleting a sub recipe.
+        This method overrides the default post method to ensure that the sub recipe is deleted
+        and the cache is invalidated for both the detail and list sub recipes.
+        """
+        return self.delete(request, *args, **kwargs)
+    
+
+def invalidate_recipe_cache(recipe_id=None):
+    """
+    Invalidates the sub recipe cache.
+    """
+    if recipe_id:
+        cache_key_detail = f'sub_recipe_detail_{recipe_id}'
+        cache.delete(cache_key_detail)
+    cache.delete('sub_recipe_list_queryset')
+    return JsonResponse({'status': 'Cache invalidated'})
