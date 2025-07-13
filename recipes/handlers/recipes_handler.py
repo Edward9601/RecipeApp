@@ -1,6 +1,8 @@
-from recipes.forms.recipe_forms import fetch_ingredients_and_steps_formsets, RecipeImageForm
-from recipes.models.recipe_models import Recipe, Category, Tag
+from recipes.forms.recipe_forms import fetch_ingredients_and_steps_formsets, RecipeImageForm, RecipeCreateForm
+from recipes.models.recipe_models import Recipe, Category, Tag, RecipeSubRecipe
 from django.core.handlers.wsgi import WSGIRequest
+
+from django.core.cache import cache
 
 import os
 
@@ -12,7 +14,11 @@ def get_recipe_context_data_post(recipe: Recipe, request: WSGIRequest, image_for
     This function is used to handle form submissions and populate the context with form data.
     """
     # Fetch the formsets for ingredients and steps
-    ingredient_formset, steps_formset = fetch_ingredients_and_steps_formsets()
+    initials_data_for_steps = {'order': 1}  
+    ingredient_formset, steps_formset = fetch_ingredients_and_steps_formsets(initial_data=initials_data_for_steps)
+    
+    # For POST requests, we might not have a recipe instance yet, so we pass None
+    # The formsets will handle this properly
     context = {
         'ingredient_formset': ingredient_formset(request.POST,
                                                 instance=recipe,
@@ -37,13 +43,15 @@ def get_recipe_context_data_get(recipe: Recipe, image_form: RecipeImageForm, ima
     This function is used to handle form submissions and populate the context with form data.
     """
     # Fetch the formsets for ingredients and steps
-    ingredient_formset, steps_formset = fetch_ingredients_and_steps_formsets(extra_forms)
+    ingredient_formset, step_formset = fetch_ingredients_and_steps_formsets(extra_forms)
+    initial_data = [{"order": 1}]
     context = {
         'ingredient_formset': ingredient_formset(instance=recipe, prefix='ingredients'),
-        'step_formset': steps_formset(instance=recipe, prefix='steps'),
+        'step_formset': step_formset(instance=recipe, prefix='steps', initial=initial_data),
         'image_from': image_form(instance=image_instance),
         'categories': Category.objects.all(),
         'tags': Tag.objects.all(),
+        'form': RecipeCreateForm(instance=recipe),
     }
     return context
 
@@ -84,3 +92,108 @@ def are_forms_valid(forms):
         return True
     return False
     
+
+def get_cached_object(key: str):
+    """
+    Retrieves an object from the cache using the provided key.
+    If the object is not found in the cache, it returns None.
+    """
+    return cache.get(key)
+
+def set_cached_object(key: str, value, timeout=None):
+    """
+    Sets an object in the cache with the provided key and value.
+    If a timeout is specified, it will be used; otherwise, the default timeout will be used.
+    """
+    try:
+        cache.set(key, value, timeout)
+    except Exception as e:
+        return (False, str(e))
+    return (True, '')
+
+
+
+def invalidate_recipe_cache(recipe_id=None):
+    """
+    Invalidates the recipe cache.
+    """
+    try:
+        if recipe_id:
+            cache.delete(recipe_id)
+        cache.delete('recipe_list_queryset')
+    except Exception as e:
+        return {'status': 'Cache invalidation failed', 'error': str(e)}
+    return {'status': 'Cache invalidated'}
+
+def save_recipe_and_forms(recipe: Recipe, context: dict):
+    """
+    Save the recipe and its associated forms.
+    This method is used to save the recipe and its associated forms.
+    """
+    
+
+    ingredient_formset = context['ingredient_formset']
+    step_formset = context['step_formset']
+    image_form = context.get('image_from', None)
+
+    forms_list = [ingredient_formset, step_formset]
+    if are_forms_valid(forms_list):
+        # Save the recipe first so it has an ID for the formsets
+        recipe.save()
+        
+        if image_form:
+            if image_form.is_valid():
+                    # Save the image form if it is valid
+                save_image_form(recipe, image_form)
+            else:
+                return  False
+                
+        save_valid_forms(recipe, forms_list)
+        return True
+    return False
+
+def save_categories_and_tags(recipe: Recipe, category_list, tag_list):
+    """
+    Save the categories and tags for the recipe.
+    This method is used to save the categories and tags for the recipe.
+    """
+    category_ids = [int(cat_id) for cat_id in category_list]
+    tag_ids = [int(tag_id) for tag_id in tag_list]
+
+    response = recipe.categories.set(category_ids)
+    
+    response = recipe.tags.set(tag_ids)
+
+
+def update_recipe_sub_recipe_relationship(recipe: Recipe,new_recipes_to_add, current_sub_recipes, recipe_sub_recipe_model: RecipeSubRecipe):
+    """
+    Update the relationship between the recipe and its sub-recipes.
+    This method is used to update the relationship between the recipe and its sub-recipes.
+    """
+
+    sub_recipes_to_add = new_recipes_to_add - current_sub_recipes
+    to_remove = current_sub_recipes - new_recipes_to_add
+    try:
+        if to_remove:
+            recipe_sub_recipe_model.objects.filter(recipe=recipe, sub_recipe__in=to_remove).delete()
+        if sub_recipes_to_add:
+            recipe_sub_recipe_model.objects.bulk_create([RecipeSubRecipe(recipe=recipe, sub_recipe=sub_recipe) 
+                                                                for sub_recipe 
+                                                                in sub_recipes_to_add])
+    except Exception as e:
+        return (False, str(e))
+    return (True, '')
+
+def create_recipe_sub_recipe_relationship(recipe: Recipe, sub_recipes):
+    """
+    Create the relationship between the recipe and its sub-recipes.
+    This method is used to create the relationship between the recipe and its sub-recipes.
+    """
+    try:
+        for sub_recipe in sub_recipes:
+            RecipeSubRecipe.objects.create(recipe=recipe, sub_recipe=sub_recipe)
+    except Exception as e:
+        return (False, str(e))
+    return (True, '')
+
+   
