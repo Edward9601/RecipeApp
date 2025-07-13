@@ -2,7 +2,6 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from django.core.cache import cache
 
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
 from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm
@@ -38,11 +37,13 @@ class RecipeListView(ListView):
     def get_queryset(self):
         # Try to get cached data
         cache_key = 'recipe_list_queryset'
-        queryset = cache.get(cache_key)
+        queryset = recipes_handler.get_cached_object(cache_key)
         if queryset is None:
             # If not in cache, get fresh data and cache it
             queryset = super().get_queryset()
-            cache.set(cache_key, queryset, timeout=60 * 15)  # Cache for 15 minutes
+            success, error_maessage = recipes_handler.set_cached_object(cache_key, queryset, timeout=60 * 60)  # Cache for 1 hour
+            if not success:
+                raise Exception(f"Failed to set cache: {error_maessage}")
         form = self.get_filter_form()
         if form.is_valid():
             category = form.cleaned_data.get('category')
@@ -55,14 +56,14 @@ class RecipeListView(ListView):
         
 
     def search(self, request):
-        search = request.GET.get('search_text')
+        search_elements = request.GET.get('search_text')
         search_type = request.GET.get('searchType')
 
-        if search:
+        if search_elements:
             if search_type.lower() == 'title':
-                recipes = self.model.objects.filter(title__icontains=search)
+                recipes = self.model.objects.filter(title__icontains=search_elements)
             elif search_type.lower() == 'ingredient':
-                ingredients_to_search = [ingredient.strip() for ingredient in search.split(',') if ingredient.strip()]
+                ingredients_to_search = [ingredient.strip() for ingredient in search_elements.split(',') if ingredient.strip()]
 
                 query_set = self.model.objects.all()
                 for ingredient in ingredients_to_search:
@@ -86,15 +87,17 @@ class RecipeDetailView(DetailView):
     def get_object(self, queryset=None):
         # Try to get cached data
         cache_key = f'recipe_detail_{self.kwargs.get("pk")}'
-        cached_object_data = cache.get(cache_key)
+        response = recipes_handler.get_cached_object(cache_key)
         
-        if cached_object_data is None:
+        if response is None:
             # If not in cache, get fresh data and cache it
             queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'sub_recipes', 'categories', 'tags')
             response = super().get_object(queryset)
-            cache.set(cache_key, response, timeout=60 * 60)  # Cache for 1 hour
+            success, error_message = recipes_handler.set_cached_object(cache_key, response, timeout=60 * 60)  # Cache for 1 hour
+            if not success:
+                raise Exception(f"Failed to set cache: {error_message}")
             return response
-        return cached_object_data
+        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -117,13 +120,13 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
     model = Recipe
     form_class = RecipeCreateForm
     image_form = RecipeImageForm
+    intermidiate_table = RecipeSubRecipe
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.POST:
-            context.update(recipes_handler.get_recipe_context_data_post(self.object, self.request, self.image_form))
-        else:
-            context.update(recipes_handler.get_recipe_context_data_get(self.object, self.image_form, extra_forms=1))
+
+        recipe_context_get = recipes_handler.get_recipe_context_data_get(self.object, self.image_form, extra_forms=1)
+        context.update(recipe_context_get)
         return context
 
     def form_valid(self, form):
@@ -134,38 +137,26 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
         """
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
-        context = self.get_context_data()
-
-        ingredient_formset = context['ingredient_formset']
-        step_formset = context['step_formset']
-        image_form = context.get('image_from', None)
-
-        forms_list = [ingredient_formset, step_formset]
-        if recipes_handler.are_forms_valid(forms_list):
-            self.object.save()
-            if image_form:
-                if image_form.is_valid():
-                    # Save the image form if it is valid
-                    recipes_handler.save_image_form(self.object, image_form)
-                else:
-                    return self.form_invalid(image_form)
+        context = recipes_handler.get_recipe_context_data_post(self.object, self.request, self.image_form)
+        success = recipes_handler.save_recipe_and_forms(self.object, context)
+        if not success:
+            return self.form_invalid(form)
                 
-            recipes_handler.save_valid_forms(self.object, forms_list)
-            category_ids = [int(cat_id) for cat_id in self.request.POST.getlist('categories')]
-            tag_ids = [int(tag_id) for tag_id in self.request.POST.getlist('tags')]
-   
-            self.object.categories.set(category_ids)
-            self.object.tags.set(tag_ids)
-            # Handle sub-recipes
-            sub_recipes = form.cleaned_data.get('sub_recipes')
-            if sub_recipes:
-                for sub_recipe in sub_recipes:
-                    RecipeSubRecipe.objects.create(recipe=self.object, sub_recipe=sub_recipe)
-
-            # Clear the cache for recipe list to ensure new recipe appears
-            invalidate_recipe_cache()
-            return redirect(self.object.get_absolute_url())
-        return self.form_invalid(form)
+        recipes_handler.save_categories_and_tags(self.object,
+                                                 self.request.POST.getlist('categories'),
+                                                 self.request.POST.getlist('tags'))
+        # Handle sub-recipes
+        sub_recipes = form.cleaned_data.get('sub_recipes')
+        if sub_recipes:
+            success, error_message = recipes_handler.update_recipe_sub_recipe_relationship(
+                self.object, set(sub_recipes), self.intermidiate_table)
+            if not success:
+                form.add_error(None, error_message)
+                return self.form_invalid(form)
+        # Clear the cache for recipe list to ensure new recipe appears
+        recipes_handler.invalidate_recipe_cache()
+        return redirect(self.object.get_absolute_url())
+        
     
 
 class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
@@ -176,15 +167,14 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     form_class = RecipeCreateForm
     image_form = RecipeImageForm
     template_name = 'recipes/recipe_form.html'
+    intermidiate_table = RecipeSubRecipe
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
+        context =  super().get_context_data(**kwargs)
+        
         image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
-        if self.request.POST:
-            context.update(recipes_handler.get_recipe_context_data_post(self, image_instance))
-        else:
-            context.update(recipes_handler.get_recipe_context_data_get(self, image_instance))
+        recipe_context_get = recipes_handler.get_recipe_context_data_get(self.object, self.image_form,image_instance)
+        context.update(recipe_context_get)
         return context
 
     def get_form(self, form_class=None):
@@ -201,45 +191,29 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
-        context = self.get_context_data()
+        image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
+        context = recipes_handler.get_recipe_context_data_post(self.object, self.request, self.image_form, image_instance)
+        success = recipes_handler.save_recipe_and_forms(self.object, context)
+        if not success:
+            return self.form_invalid(form)
 
-        ingredient_formset = context['ingredient_formset']
-        step_formset = context['step_formset']
-        image_form = context.get('image_from', None)
-
-        forms_list = [ingredient_formset, step_formset]
-        if recipes_handler.are_forms_valid(forms_list):
-            self.object.save()
-            if image_form:
-                if image_form.is_valid():
-                    # Save the image form if it is valid
-                    recipes_handler.save_image_form(self.object, image_form)
-                else:
-                    return self.form_invalid(image_form)
-                
-            recipes_handler.save_valid_forms(self.object, forms_list)
-            category_ids = [int(cat_id) for cat_id in self.request.POST.getlist('categories')]
-            tag_ids = [int(tag_id) for tag_id in self.request.POST.getlist('tags')]
-   
-            self.object.categories.set(category_ids)
-            self.object.tags.set(tag_ids)
-            new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
-            current_sub_recipes = set(self.object.sub_recipes.all())
-
-            sub_recipes_to_add = new_recipes_to_add - current_sub_recipes
-            to_remove = current_sub_recipes - new_recipes_to_add
-
-            if to_remove:
-                self.intermediate_table.objects.filter(recipe=self.object, sub_recipe__in=to_remove).delete()
-            if sub_recipes_to_add:
-                RecipeSubRecipe.objects.bulk_create([RecipeSubRecipe(recipe=self.object,
-                                                                    sub_recipe=sub_recipe) for sub_recipe in
-                                                    sub_recipes_to_add])
-            record_id = f'recipe_detail_{self.object.id}'
-            invalidate_recipe_cache(record_id)
-            
-            return redirect(self.get_success_url())
-        return self.form_invalid(form)
+        recipes_handler.save_categories_and_tags(self.object,
+                                                 self.request.POST.getlist('categories'),
+                                                 self.request.POST.getlist('tags'))
+        
+        new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
+        current_sub_recipes = set(self.object.sub_recipes.all())
+        if new_recipes_to_add != current_sub_recipes:
+            success, error_message = recipes_handler.update_recipe_sub_recipe_relationship(
+                self.object, new_recipes_to_add, current_sub_recipes, self.intermidiate_table)
+            if not success:
+                form.add_error(None, error_message)
+                return self.form_invalid(form) 
+        record_id = f'recipe_detail_{self.object.id}'
+        recipes_handler.invalidate_recipe_cache(record_id)
+        
+        return redirect(self.get_success_url())
+    
 
 
 
@@ -258,7 +232,7 @@ class RecipeDeleteView(DeleteView):
         """
         # Invalidate cache for this recipe and the recipe list
         cache_key_detail = f'recipe_detail_{self.object.id}'
-        invalidate_recipe_cache(cache_key_detail)
+        recipes_handler.invalidate_recipe_cache(cache_key_detail)
 
         return super().delete(request, *args, **kwargs)
     
@@ -286,15 +260,3 @@ def get_categories_and_tags(request):
         'tags': [{'id': tag.id, 'name': tag.name} for tag in tags]
     }
     return JsonResponse(data)
-
-
-def invalidate_recipe_cache(recipe_id=None):
-    """
-    Invalidates the recipe cache.
-    """
-    if recipe_id:
-        cache_key_detail = f'recipe_detail_{recipe_id}'
-        cache.delete(cache_key_detail)
-    cache.delete('recipe_list_queryset')
-    return JsonResponse({'status': 'Cache invalidated'})
-
