@@ -8,14 +8,13 @@ import os
 
 
 
-def get_recipe_context_data_post(recipe: Recipe, request: WSGIRequest, image_form:RecipeImageForm, image_instance=None):
+def get_recipe_context_data_post(recipe: Recipe, request: WSGIRequest, image_form: RecipeImageForm, image_instance=None):
     """
     Populates the context data for POST requests.
     This function is used to handle form submissions and populate the context with form data.
     """
     # Fetch the formsets for ingredients and steps
-    initials_data_for_steps = {'order': 1}  
-    ingredient_formset, steps_formset = fetch_ingredients_and_steps_formsets(initial_data=initials_data_for_steps)
+    ingredient_formset, steps_formset = fetch_ingredients_and_steps_formsets()
     
     # For POST requests, we might not have a recipe instance yet, so we pass None
     # The formsets will handle this properly
@@ -80,6 +79,15 @@ def save_image_form(recipe: Recipe, image_form: RecipeImageForm):
         new_name = f'{base_name}{ext}'
         image_form.instance.picture.name = new_name
     image_form.save()
+
+def save_recipe_sub_recipe_relationship(recipe: Recipe, sub_recipes, intermidiate_table: RecipeSubRecipe):
+    """
+    Save the relationship between the recipe and its sub-recipes.
+    This method is used to save the relationship between the recipe and its sub-recipes.
+    """
+    for sub_recipe in sub_recipes:
+        intermidiate_table.objects.create(recipe=recipe, sub_recipe=sub_recipe)
+
 
 
 
@@ -160,9 +168,9 @@ def save_categories_and_tags(recipe: Recipe, category_list, tag_list):
     category_ids = [int(cat_id) for cat_id in category_list]
     tag_ids = [int(tag_id) for tag_id in tag_list]
 
-    response = recipe.categories.set(category_ids)
+    recipe.categories.set(category_ids)
     
-    response = recipe.tags.set(tag_ids)
+    recipe.tags.set(tag_ids)
 
 
 def update_recipe_sub_recipe_relationship(recipe: Recipe,new_recipes_to_add, current_sub_recipes, recipe_sub_recipe_model: RecipeSubRecipe):

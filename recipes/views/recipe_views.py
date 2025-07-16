@@ -148,11 +148,8 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
         # Handle sub-recipes
         sub_recipes = form.cleaned_data.get('sub_recipes')
         if sub_recipes:
-            success, error_message = recipes_handler.update_recipe_sub_recipe_relationship(
-                self.object, set(sub_recipes), self.intermidiate_table)
-            if not success:
-                form.add_error(None, error_message)
-                return self.form_invalid(form)
+            recipes_handler.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
+                                                                self.intermidiate_table)
         # Clear the cache for recipe list to ensure new recipe appears
         recipes_handler.invalidate_recipe_cache()
         return redirect(self.object.get_absolute_url())
@@ -203,7 +200,7 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         
         new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
         current_sub_recipes = set(self.object.sub_recipes.all())
-        if new_recipes_to_add != current_sub_recipes:
+        if new_recipes_to_add and new_recipes_to_add != current_sub_recipes:
             success, error_message = recipes_handler.update_recipe_sub_recipe_relationship(
                 self.object, new_recipes_to_add, current_sub_recipes, self.intermidiate_table)
             if not success:
@@ -231,7 +228,7 @@ class RecipeDeleteView(DeleteView):
         and the cache is invalidated for both the recipe detail and the recipe list.
         """
         # Invalidate cache for this recipe and the recipe list
-        cache_key_detail = f'recipe_detail_{self.object.id}'
+        cache_key_detail = f'recipe_detail_{self.kwargs.get("pk")}'
         recipes_handler.invalidate_recipe_cache(cache_key_detail)
 
         return super().delete(request, *args, **kwargs)
