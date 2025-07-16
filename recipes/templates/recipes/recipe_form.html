@@ -3,13 +3,16 @@
 {% load static %}
 {% block content %}
 <div class="container">
-    <form id="recipe-form" method="POST" action="{% if object %}{% url 'recipes:update' object.id %}
-    {% else %}
-    {% url 'recipes:create' %}{% endif %}" 
+    <form id="recipe-form" method="POST" action="{% if object %}
+                                                    {% url 'recipes:update' object.id %}
+                                                 {% else %}
+                                                    {% url 'recipes:create' %}
+                                                 {% endif %}" 
      autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
         <div id="categories-hidden"></div>
         <div id="tags-hidden"></div>
+        <div id="sub-recipes-hidden"></div>
         <div class="mb-3">
             {{ form.title|as_crispy_field }}
         </div>
@@ -25,19 +28,9 @@
         </button>
         {% if form.sub_recipes %}
             <div class="dropdown mb-4">
-                <button type="button" class="btn btn-outline-secondary dropdown-toggle" id="subRecipeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <button type="button" class="btn btn-primary mb-3" id="subRecipeButton" data-bs-toggle="modal" data-bs-target="#subRecipesModal">
                     Select Sub-Recipes
                 </button>
-                <div class="dropdown-menu p-3" aria-labelledby="subRecipeDropdown">
-                    {% for choice in form.sub_recipes %}
-                    <div class="form-check dropdown-item">
-                        {{ choice.tag }}
-                        <label class="form-check-label" for="{{ choice.id_for_label }}">
-                            {{ choice.choice_label }}
-                        </label>
-                    </div>
-                    {% endfor %}
-                </div>
             </div>
         {% endif %}
         <div class="conteiner-for-ingredients-and-steps">
@@ -48,6 +41,7 @@
 <script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
 <!--Modal for Categories and Tags  -->
 {% include 'partials/categories_and_tags_modal.html' %}
+{% include 'partials/sub_recipe_modal.html' %}
 {% endblock %}
 
 

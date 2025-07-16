@@ -14,10 +14,18 @@ export class RecipeManager {
         this.categoriesAndTagsModal = null;
         // Flag to ensure initial selections are loaded only once
         this.initialeSelectionsLoaded = false;
+        this.subRecipesModal = null;
+        this.subRecipesButton = null;
+        this.selectedSubRecipes = new Set();
+        this.initialSubRecipeSelectionLoaded = false;
         this.imagePreview = null;
         this.mainForm = document.getElementById('recipe-form');
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
         this.imagePreview = document.getElementById('image-preview');
+        this.subRecipesModal = document.getElementById('subRecipesModal');
+        this.subRecipesButton = document.getElementById('subRecipeButton');
+        console.log("subRecipesModal", this.subRecipesModal);
+        console.log("subRecipesButton", this.subRecipesButton);
         if (this.mainForm) {
             this.setupListenersForRecipeForm();
             new IngredientsAndStepsManager(this.mainForm);
@@ -25,7 +33,6 @@ export class RecipeManager {
     }
     setupListenersForRecipeForm() {
         var _a;
-        console.log('Setting up listeners');
         if (this.mainForm) {
             const dropdownButton = this.mainForm.querySelector('#subRecipeDropdown');
             const dropdownMenu = this.mainForm.querySelector('#subRecipeDropdownMenu');
@@ -42,7 +49,7 @@ export class RecipeManager {
                 const categoriesAndTagsButton = this.mainForm.querySelector('#openCategoriesAndTagsButton');
                 if (categoriesAndTagsButton && !this.initialeSelectionsLoaded) {
                     categoriesAndTagsButton.addEventListener('click', () => {
-                        this.loadInitialSelections();
+                        this.loadCategoriesAndTagsInitialSelections();
                     });
                     // Load initial selections only once
                     this.initialeSelectionsLoaded = true;
@@ -59,7 +66,6 @@ export class RecipeManager {
                         else {
                             this.selectedCategories.delete(value);
                         }
-                        console.log('Categories updated:', Array.from(this.selectedCategories));
                     }
                     else if (target.id.startsWith('id_tags_')) {
                         if (target.checked) {
@@ -68,13 +74,11 @@ export class RecipeManager {
                         else {
                             this.selectedTags.delete(value);
                         }
-                        console.log('Tags updated:', Array.from(this.selectedTags));
                     }
                 }
             });
             // Update selections when modal is hidden
             this.categoriesAndTagsModal.addEventListener('hidden.bs.modal', () => {
-                console.log('Modal hidden, updating selections');
                 this.updateFormSelections();
             });
             if (this.imagePreview && this.mainForm) {
@@ -85,18 +89,64 @@ export class RecipeManager {
                     });
                 }
             }
+            if (this.subRecipesModal && this.subRecipesButton) {
+                this.subRecipesButton.addEventListener('click', () => {
+                    // Load initial selections for sub-recipes
+                    if (!this.initialSubRecipeSelectionLoaded) {
+                        this.loadInitialSubRecipeSelections();
+                        this.initialSubRecipeSelectionLoaded = true;
+                    }
+                });
+                // Handle sub-recipe selection changes
+                this.subRecipesModal.addEventListener('change', (event) => {
+                    const target = event.target;
+                    if (target.type === 'checkbox' && target.id.startsWith('id_sub_recipes_')) {
+                        const value = parseInt(target.value);
+                        if (target.checked) {
+                            this.selectedSubRecipes.add(value);
+                        }
+                        else {
+                            this.selectedSubRecipes.delete(value);
+                        }
+                    }
+                });
+                // Update selections when modal is hidden
+                this.subRecipesModal.addEventListener('hidden.bs.modal', () => {
+                    this.updateSubRecipeSelections();
+                });
+            }
         }
     }
-    loadInitialSelections() {
-        if (!this.categoriesAndTagsModal) {
-            console.warn('Modal not found. Cannot load initial selections.');
+    loadInitialSubRecipeSelections() {
+        if (!this.subRecipesModal) {
             return;
         }
-        console.log('Loading initial selections');
+        // Load initial state from form
+        const subRecipeInputs = this.subRecipesModal.querySelectorAll('input[id^="id_sub_recipes_"]');
+        subRecipeInputs.forEach(input => {
+            if (input.checked) {
+                this.selectedSubRecipes.add(parseInt(input.value));
+            }
+        });
+    }
+    updateSubRecipeSelections() {
+        if (!this.mainForm)
+            return;
+        // Remove old hidden inputs
+        this.mainForm.querySelectorAll('input[name="sub_recipes"]').forEach(input => input.remove());
+        // Add new hidden inputs for sub-recipes
+        const subRecipesContainer = this.mainForm.querySelector('#sub-recipes-hidden');
+        if (subRecipesContainer) {
+            RecipeManager.addHiddenInputs(subRecipesContainer, this.selectedSubRecipes, 'sub_recipes');
+        }
+    }
+    loadCategoriesAndTagsInitialSelections() {
+        if (!this.categoriesAndTagsModal) {
+            return;
+        }
         // Load initial state from form
         const categoryInputs = this.categoriesAndTagsModal.querySelectorAll('input[id^="id_categories_"]');
         const tagInputs = this.categoriesAndTagsModal.querySelectorAll('input[id^="id_tags_"]');
-        console.log(`Found ${categoryInputs.length} category inputs and ${tagInputs.length} tag inputs`);
         categoryInputs.forEach(input => {
             if (input.checked) {
                 this.selectedCategories.add(parseInt(input.value));
@@ -132,12 +182,10 @@ export class RecipeManager {
             input.value = id.toString();
             checkboxes === null || checkboxes === void 0 ? void 0 : checkboxes.appendChild(input);
         });
-        console.log('Hidden inputs updated:', Array.from(selectedElements));
     }
     static previewImage(fileInput, imagePreview) {
         var _a;
         if (!fileInput || !imagePreview) {
-            console.error('File input or image preview element not found.');
             return;
         }
         const file = (_a = fileInput.files) === null || _a === void 0 ? void 0 : _a[0];

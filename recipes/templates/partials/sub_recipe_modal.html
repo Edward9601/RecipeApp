@@ -1,0 +1,35 @@
+<div class="modal fade" id="subRecipesModal" tabindex="-1" aria-labelledby="subRecipesModalLable">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="subRecipesTitle">Sub-Recipes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalFormElements">
+                    <div class="sub-recipes-section mb-4">
+                        <h6>Sub-Recipes</h6>
+                        <div id="subRecipesList" class="form-check">
+                            {% for sub_recipe in form.sub_recipes %}
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           class="form-check-input" 
+                                           name="sub_recipes"
+                                           id="{{ sub_recipe.id_for_label }}"
+                                           value="{{ sub_recipe.data.value }}"
+                                           {% if sub_recipe.data.selected %}checked{% endif %}>
+                                    <label class="form-check-label" for="{{ sub_recipe.id_for_label }}">
+                                        {{ sub_recipe.choice_label }}
+                                    </label> 
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div> 
+</div>
