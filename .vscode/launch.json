@@ -15,7 +15,7 @@
             "django": true,
             "autoStartBrowser": false,
             "program": "${workspaceFolder}/manage.py",
-            "python": "/Users/edwarddumbuya/Documents/Projects/Django/MyWebSite/venv/bin/python"
+            "python": "/Users/edwarddumbuya/Documents/Projects/Django/MyWebSite/.venv/bin/python" // Adjust the path to your virtual environment's Python interpreter
         },
        {
             "type": "chrome",

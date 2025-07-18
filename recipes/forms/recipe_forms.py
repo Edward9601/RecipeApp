@@ -3,6 +3,7 @@ from django import forms
 from ..models.recipe_models import Recipe, RecipeIngredient, RecipeStep, Tag, Category, RecipeImage
 from django.forms import inlineformset_factory
 import os
+from utils.models import ImageHandler
 
 class RecipeImageForm(forms.ModelForm):
     class Meta:
@@ -19,6 +20,13 @@ class RecipeImageForm(forms.ModelForm):
             if instance.picture:
                 instance.create_thumbnail(instance.thumbnail_folder, instance.picture.name, size=(600, 600))
         return instance
+    
+
+    def clean_picture(self):
+        picture = self.cleaned_data.get('picture')
+        if picture.name.endswith('.heic'):
+            picture = ImageHandler.convert_to_jpeg(picture)
+        return picture
 
 class RecipeHomeForm(forms.ModelForm):
     class Meta:
