@@ -139,7 +139,7 @@ def get_db_config():
             'PORT': '5432'
         }
     
-    if 'development' == 'development':
+    if ENV == 'development':
         print('connecting to neaon')
         db_url = os.getenv("DATABASE_URL")
         if not db_url:

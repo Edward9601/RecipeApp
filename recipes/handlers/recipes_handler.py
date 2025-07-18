@@ -25,8 +25,6 @@ def get_recipe_context_data_post(recipe: Recipe, request: WSGIRequest, image_for
         'step_formset': steps_formset(request.POST,
                                       instance=recipe,
                                       prefix='steps'),
-        'categories': Category.objects.all(),
-        'tags': Tag.objects.all(),
     }
     if request.FILES:
         # If there are files in the request, ensure the image form is included
