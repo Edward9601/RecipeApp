@@ -1,6 +1,9 @@
 from recipes.forms.recipe_forms import fetch_ingredients_and_steps_formsets, RecipeImageForm, RecipeCreateForm
 from recipes.models.recipe_models import Recipe, Category, Tag, RecipeSubRecipe
+from utils.models import ImageHandler as image_handler
+
 from django.core.handlers.wsgi import WSGIRequest
+
 
 from django.core.cache import cache
 
@@ -73,7 +76,7 @@ def save_image_form(recipe: Recipe, image_form: RecipeImageForm):
     if image_form.instance.picture and image_form.instance.recipe:
         orig = image_form.instance.picture
         ext = os.path.splitext(orig.name)[1]
-        base_name = image_form.instance.slugify(recipe.title)
+        base_name = image_handler.slugify_name(recipe.title)
         new_name = f'{base_name}{ext}'
         image_form.instance.picture.name = new_name
     image_form.save()
