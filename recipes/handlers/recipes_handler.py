@@ -11,7 +11,7 @@ import os
 
 
 
-def get_recipe_context_data_post(recipe: Recipe, request: WSGIRequest, image_form: RecipeImageForm, image_instance=None):
+def fetch_recipe_context_data_for_post_request(recipe: Recipe, request: WSGIRequest, image_form: RecipeImageForm, image_instance=None) -> dict:
     """
     Populates the context data for POST requests.
     This function is used to handle form submissions and populate the context with form data.
@@ -31,13 +31,13 @@ def get_recipe_context_data_post(recipe: Recipe, request: WSGIRequest, image_for
     }
     if request.FILES:
         # If there are files in the request, ensure the image form is included
-        context['image_from'] = image_form(request.POST,
+        context['image_form'] = image_form(request.POST,
                                            request.FILES,
                                            instance=image_instance)
     return context
 
 
-def get_recipe_context_data_get(recipe: Recipe, image_form: RecipeImageForm, image_instance=None, extra_forms=0):
+def fetch_recipe_context_data_for_get_request(recipe: Recipe, image_form: RecipeImageForm, image_instance=None, extra_forms=0) -> dict:
     """
     Populates the context data for POST requests.
     This function is used to handle form submissions and populate the context with form data.
@@ -48,7 +48,7 @@ def get_recipe_context_data_get(recipe: Recipe, image_form: RecipeImageForm, ima
     context = {
         'ingredient_formset': ingredient_formset(instance=recipe, prefix='ingredients'),
         'step_formset': step_formset(instance=recipe, prefix='steps', initial=initial_data),
-        'image_from': image_form(instance=image_instance),
+        'image_form': image_form(instance=image_instance),
         'categories': Category.objects.all(),
         'tags': Tag.objects.all(),
         'form': RecipeCreateForm(instance=recipe),
@@ -56,7 +56,7 @@ def get_recipe_context_data_get(recipe: Recipe, image_form: RecipeImageForm, ima
     return context
 
 
-def save_valid_forms(recipe: Recipe, form_list):
+def save_valid_forms(recipe: Recipe, form_list) -> bool:
         """
         Save the image forms and associate them with the recipe instance.
         This method is used to save the forms that are valid and associate them with the recipe instance
@@ -66,7 +66,7 @@ def save_valid_forms(recipe: Recipe, form_list):
             form.instance = recipe
             form.save()
 
-def save_image_form(recipe: Recipe, image_form: RecipeImageForm):
+def save_image_form(recipe: Recipe, image_form: RecipeImageForm) -> None:
     """
     Save the image form and associate it with the recipe instance.
     This method is used to save the image form that is valid and associate it with the recipe instance.
@@ -81,7 +81,7 @@ def save_image_form(recipe: Recipe, image_form: RecipeImageForm):
         image_form.instance.picture.name = new_name
     image_form.save()
 
-def save_recipe_sub_recipe_relationship(recipe: Recipe, sub_recipes, intermidiate_table: RecipeSubRecipe):
+def save_recipe_sub_recipe_relationship(recipe: Recipe, sub_recipes, intermidiate_table: RecipeSubRecipe) -> None:
     """
     Save the relationship between the recipe and its sub-recipes.
     This method is used to save the relationship between the recipe and its sub-recipes.
@@ -90,9 +90,7 @@ def save_recipe_sub_recipe_relationship(recipe: Recipe, sub_recipes, intermidiat
         intermidiate_table.objects.create(recipe=recipe, sub_recipe=sub_recipe)
 
 
-
-
-def are_forms_valid(forms):
+def validate_forms(forms) -> bool:
     """
     Check if the ingredient and step formsets are valid.
     If an image form is provided, it also checks if the image form is valid.
@@ -102,14 +100,14 @@ def are_forms_valid(forms):
     return False
     
 
-def get_cached_object(key: str):
+def get_cached_object(key: str) -> object:
     """
     Retrieves an object from the cache using the provided key.
     If the object is not found in the cache, it returns None.
     """
     return cache.get(key)
 
-def set_cached_object(key: str, value, timeout=None):
+def set_cached_object(key: str, value, timeout=None) -> tuple:
     """
     Sets an object in the cache with the provided key and value.
     If a timeout is specified, it will be used; otherwise, the default timeout will be used.
@@ -122,7 +120,7 @@ def set_cached_object(key: str, value, timeout=None):
 
 
 
-def invalidate_recipe_cache(recipe_id=None):
+def invalidate_recipe_cache(recipe_id=None) -> dict:
     """
     Invalidates the recipe cache.
     """
@@ -134,7 +132,7 @@ def invalidate_recipe_cache(recipe_id=None):
         return {'status': 'Cache invalidation failed', 'error': str(e)}
     return {'status': 'Cache invalidated'}
 
-def save_recipe_and_forms(recipe: Recipe, context: dict):
+def save_recipe_and_forms(recipe: Recipe, context: dict) -> bool:
     """
     Save the recipe and its associated forms.
     This method is used to save the recipe and its associated forms.
@@ -146,7 +144,7 @@ def save_recipe_and_forms(recipe: Recipe, context: dict):
     image_form = context.get('image_from', None)
 
     forms_list = [ingredient_formset, step_formset]
-    if are_forms_valid(forms_list):
+    if validate_forms(forms_list):
         # Save the recipe first so it has an ID for the formsets
         recipe.save()
         

@@ -78,7 +78,7 @@ class RecipeStepForm(forms.ModelForm):
         }
 
 
-def fetch_ingredients_and_steps_formsets(extra_forms=0, initial_data=None):
+def fetch_ingredients_and_steps_formsets(extra_forms:int =0):
     """
     Returns the ingredient and step formsets for a given recipe instance.
     """    
