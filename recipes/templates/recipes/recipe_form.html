@@ -20,7 +20,7 @@
             {{ form.description|as_crispy_field }}
         </div>
         <div class="mb-3" id="id_picture">
-            {{ image_from.picture|as_crispy_field }}
+            {{ image_form.picture|as_crispy_field }}
             <img id="image-preview" src="#" alt="Image preview" style="display:none; max-width: 300px; margin-top: 10px;" />
         </div>
         <button id="openCategoriesAndTagsButton" type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoriesAndTagsModal"> <!-- Using Bootstrap attributes to trigger modal open-->

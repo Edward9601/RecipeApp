@@ -125,7 +125,7 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        recipe_context_get = recipes_handler.get_recipe_context_data_get(self.object, self.image_form, extra_forms=1)
+        recipe_context_get = recipes_handler.fetch_recipe_context_data_for_get_request(self.object, self.image_form, extra_forms=1)
         context.update(recipe_context_get)
         return context
 
@@ -137,7 +137,7 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
         """
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
-        context = recipes_handler.get_recipe_context_data_post(self.object, self.request, self.image_form)
+        context = recipes_handler.fetch_recipe_context_data_for_post_request(self.object, self.request, self.image_form)
         success = recipes_handler.save_recipe_and_forms(self.object, context)
         if not success:
             return self.form_invalid(form)
@@ -170,7 +170,7 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         context =  super().get_context_data(**kwargs)
         
         image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
-        recipe_context_get = recipes_handler.get_recipe_context_data_get(self.object, self.image_form,image_instance)
+        recipe_context_get = recipes_handler.fetch_recipe_context_data_for_get_request(self.object, self.image_form,image_instance)
         context.update(recipe_context_get)
         return context
 
@@ -189,7 +189,7 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
         image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
-        context = recipes_handler.get_recipe_context_data_post(self.object, self.request, self.image_form, image_instance)
+        context = recipes_handler.fetch_recipe_context_data_for_post_request(self.object, self.request, self.image_form, image_instance)
         success = recipes_handler.save_recipe_and_forms(self.object, context)
         if not success:
             return self.form_invalid(form)
