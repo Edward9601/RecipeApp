@@ -141,7 +141,7 @@ def save_recipe_and_forms(recipe: Recipe, context: dict) -> bool:
 
     ingredient_formset = context['ingredient_formset']
     step_formset = context['step_formset']
-    image_form = context.get('image_from', None)
+    image_form = context.get('image_form', None)
 
     forms_list = [ingredient_formset, step_formset]
     if validate_forms(forms_list):
