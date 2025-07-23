@@ -12,10 +12,8 @@ class RecipeImageForm(forms.ModelForm):
 
     def save(self, commit=True): # Currently being triggerend even if image is not submitted
         instance = super().save(commit=False)
-        print('Saving RecipeImageForm with instance:', instance)
         if commit:
             instance.save()
-            print('RecipeImageForm saved with instance:', instance)
             # Create thumbnail after saving the image
             if instance.picture:
                 instance.create_thumbnail(instance.thumbnail_folder, instance.picture.name, size=(600, 600))
