@@ -319,6 +319,49 @@ class RecipeHandlerTestCase(BaseTestCase):
         self.assertTrue(recipe.steps.filter(description='Step 1').exists())
 
 
+    def test_save_categories_and_tags_assigns_correctly(self):
+        recipe = self.recipe
+        # Create additional categories and tags
+        category2 = Category.objects.create(name='Second Category')
+        tag2 = Tag.objects.create(name='Second Tag')
+        # Assign both categories and tags
+        category_ids = [self.category.id, category2.id]
+        tag_ids = [self.tag.id, tag2.id]
+        recipes_handler.save_categories_and_tags(recipe, category_ids, tag_ids)
+        # Assert
+        self.assertSetEqual(set(recipe.categories.values_list('id', flat=True)), set(category_ids))
+        self.assertSetEqual(set(recipe.tags.values_list('id', flat=True)), set(tag_ids))
+
+
+    def test_save_categories_and_tags_empty_lists(self):
+        recipe = self.recipe
+        # Assign some categories and tags first
+        category2 = Category.objects.create(name='Second Category')
+        tag2 = Tag.objects.create(name='Second Tag')
+        recipes_handler.save_categories_and_tags(recipe, [self.category.id, category2.id], [self.tag.id, tag2.id])
+        # Now remove all
+        recipes_handler.save_categories_and_tags(recipe, [], [])
+        # Assert
+        self.assertEqual(recipe.categories.count(), 0)
+        self.assertEqual(recipe.tags.count(), 0)
+
+
+    def test_save_categories_and_tags_single(self):
+        recipe = self.recipe
+        recipes_handler.save_categories_and_tags(recipe, [self.category.id], [self.tag.id])
+        self.assertEqual(recipe.categories.count(), 1)
+        self.assertEqual(recipe.tags.count(), 1)
+        self.assertEqual(recipe.categories.first(), self.category)
+        self.assertEqual(recipe.tags.first(), self.tag)
+
+
+    def test_save_categories_and_tags_accepts_string_ids(self):
+        recipe = self.recipe
+        recipes_handler.save_categories_and_tags(recipe, [str(self.category.id)], [str(self.tag.id)])
+        self.assertEqual(recipe.categories.first(), self.category)
+        self.assertEqual(recipe.tags.first(), self.tag)
+
+
 
 
         

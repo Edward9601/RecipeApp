@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -41,16 +42,32 @@ AWS_S3_OBJECT_PARAMETERS ={
                     'must-revalidate' # Must revalidate with the server before using the file
 }
 
-STORAGES = {
-    # Configuration for image hosting on S3
-    'default': {
-        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'
-    },
-    # Configuration for CSS and JS files on S3(currently not used, but it is required for static files to work)
-    'staticfiles': {
-        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+
+# configuration to run tests that involves S3
+if 'test' in sys.argv or os.environ.get('GITHUB_ACTIONS') == 'true':
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {
+                "location": os.path.join(BASE_DIR, "test_media"),
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
     }
-}
+    MEDIA_ROOT = os.path.join(BASE_DIR, "test_media")
+else:
+    STORAGES = {
+        # Configuration for image hosting on S3
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'
+        },
+        # Configuration for CSS and JS files on S3(currently not used, but it is required for static files to work)
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        }
+    }
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
