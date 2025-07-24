@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 from .base_models import BaseRecipe, Step, Ingredient
 
@@ -12,7 +13,9 @@ class SubRecipe(BaseRecipe):
     They can also be reused in multiple recipes.
     Sub-recipes can have their own ingredients and steps, and can be linked to main recipes.
     """
-    pass
+
+    def get_absolute_url(self):
+        return reverse('recipes:sub_recipes_detail', kwargs={'pk': self.pk})
 
 class SubRecipeIngredient(Ingredient):
     """
