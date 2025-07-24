@@ -2,7 +2,6 @@ from django import forms
 
 from ..models.recipe_models import Recipe, RecipeIngredient, RecipeStep, Tag, Category, RecipeImage
 from django.forms import inlineformset_factory
-import os
 from utils.models import ImageHandler
 
 class RecipeImageForm(forms.ModelForm):
@@ -78,7 +77,7 @@ class RecipeStepForm(forms.ModelForm):
 
 def fetch_ingredients_and_steps_formsets(extra_forms:int =0):
     """
-    Returns the ingredient and step formsets for a given recipe instance.
+    Returns the ingredient and step formsets for a recipe.
     """    
     IngredientFormSet = inlineformset_factory(Recipe, RecipeIngredient,extra=extra_forms, form=RecipeIngredientForm, can_delete=True)
     StepsFormSet = inlineformset_factory(Recipe, RecipeStep,extra=extra_forms, form=RecipeStepForm, can_delete=True)

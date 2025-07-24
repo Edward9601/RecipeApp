@@ -1,7 +1,7 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from django.core.cache import cache
 from django.forms import inlineformset_factory
@@ -10,6 +10,7 @@ from utils.helpers.mixins import RegisteredUserAuthRequired
 
 from ..models.sub_recipe_models import SubRecipeIngredient, SubRecipeStep, SubRecipe
 from ..forms.sub_recipe_forms import SubRecipeIngredientForm, SubRecipeStepForm, SubRecipeForm
+from ..handlers import sub_recipe_handler
 
 class SubRecipeListView(ListView):
     """
@@ -70,24 +71,15 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        ingredient_form_set = inlineformset_factory(self.model, SubRecipeIngredient, form=SubRecipeIngredientForm,
-                                                    extra=1, can_delete=False)
-        step_form_set = inlineformset_factory(self.model, SubRecipeStep, form=SubRecipeStepForm, extra=1,
-                                              can_delete=False)
-        if self.request.POST:
-            context['ingredient_formset'] = ingredient_form_set(self.request.POST, instance=self.object,
-                                                                prefix='ingredients')
-            context['step_formset'] = step_form_set(self.request.POST, instance=self.object, prefix='steps')
-        else:
-            context['ingredient_formset'] = ingredient_form_set(instance=self.object, prefix='ingredients')
-            context['step_formset'] = step_form_set(instance=self.object, prefix='steps')
+        sub_recipe_context_data = sub_recipe_handler.fetch_sub_recipe_context_data_for_get_request(self.object, extra_forms=1)
+        context.update(sub_recipe_context_data)
         return context
 
     def form_valid(self, form):
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
 
-        context = self.get_context_data()
+        context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
         ingredient_formset = context['ingredient_formset']
         steps_formset = context['step_formset']
         if ingredient_formset.is_valid() and steps_formset.is_valid():
@@ -98,7 +90,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
             return super().form_invalid(form)
         # Invalidate cache for the sub recipe list
         invalidate_recipe_cache()
-        return super().form_valid(form)
+        return redirect(self.object.get_absolute_url())
 
 
 class SubRecipeDetailView(DetailView):
@@ -178,7 +170,7 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         else:
             return self.form_invalid(form)
         # Invalidate cache for the sub recipe list
-        recipe_id = self.object.id
+        recipe_id = f'sub_recipe_detail_{self.object.id}'
         invalidate_recipe_cache(recipe_id)
         return super().form_valid(form)
 
@@ -189,7 +181,7 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     """
     template_name = 'sub_recipes/subrecipe_confirm_delete.html'
     model = SubRecipe
-    success_url = reverse_lazy('sub_recipes')
+    success_url = reverse_lazy('recipes:sub_recipes')
 
     def delete(self, request, *args, **kwargs):
         """ 
@@ -198,7 +190,7 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
         and the cache is invalidated for both the detail and list sub recipes.
         """
         # Invalidate cache for this recipe and the recipe list
-        cache_key_detail = f'recipe_detail_{self.object.id}'
+        cache_key_detail = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         invalidate_recipe_cache(cache_key_detail)
 
         return super().delete(request, *args, **kwargs)

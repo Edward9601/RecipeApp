@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from utils.models import AbstractImageModel
+from django.urls import reverse
 
 from .sub_recipe_models import SubRecipe
 from .base_models import BaseRecipe, Ingredient, Step
@@ -45,6 +46,9 @@ class Recipe(BaseRecipe):
                                          related_name='main_recipes', blank=True)
     categories = models.ManyToManyField(Category, related_name='recipes', blank=True)
     tags = models.ManyToManyField(Tag, related_name='recipes', blank=True)
+
+    def get_absolute_url(self):
+        return reverse('recipes:detail', kwargs={'pk': self.pk})
 
 
 class RecipeImage(AbstractImageModel):
