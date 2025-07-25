@@ -174,16 +174,6 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         context.update(recipe_context_get)
         return context
 
-    def get_form(self, form_class=None):
-        form = super().get_form(form_class)
-
-        if self.object.sub_recipes.all():
-            form.fields['sub_recipes'].initial = self.object.sub_recipes.all()  # ensures that previosly selected sub recipes appear as checked.
-        elif self.object.categories.all():
-            form.fields['categories'].initial = self.object.categories.all()
-        elif self.object.tags.all():
-            form.fields['tags'].initial = self.object.tags.all()
-        return form
 
     def form_valid(self, form):
         form.instance.author = self.request.user

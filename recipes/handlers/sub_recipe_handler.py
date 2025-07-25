@@ -39,3 +39,8 @@ def fetch_sub_recipe_context_data_for_get_request(recipe: SubRecipe, extra_forms
         'form': SubRecipeForm(instance=recipe),
     }
     return context
+
+def validate_forms(forms_list) -> bool:
+    if all(form.is_valid() for form in forms_list):
+        return True
+    return False
