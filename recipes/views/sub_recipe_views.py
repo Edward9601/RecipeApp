@@ -117,10 +117,10 @@ class SubRecipeDetailView(DetailView):
         Adds additional context to the template, including whether the user can edit the recipe.
         """
         context = super().get_context_data(**kwargs)
-        context['can_edit'] = self.can_edit_recipe()
+        context['can_edit'] = self.can_edit_sub_recipe()
         return context
     
-    def can_edit_recipe(self):
+    def can_edit_sub_recipe(self):
         """
         Determines if the user can edit the recipe.
         """
@@ -139,32 +139,21 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         context = super().get_context_data(**kwargs)
 
         # Create formsets for ingredients and steps in sub recipe
-        ingredient_formset = inlineformset_factory(
-            SubRecipe, SubRecipeIngredient, form=SubRecipeIngredientForm, extra=0, can_delete=True
-        )
-        step_formset = inlineformset_factory(
-            SubRecipe, SubRecipeStep, form=SubRecipeStepForm, extra=0, can_delete=True
-        )
-
-        if self.request.POST:
-            context['ingredient_formset'] = ingredient_formset(self.request.POST, instance=self.object)
-            context['step_formset'] = step_formset(self.request.POST, instance=self.object)
-        else:
-            context['ingredient_formset'] = ingredient_formset(instance=self.object)
-            context['step_formset'] = step_formset(instance=self.object)
-
+        sub_recipe_context_data = sub_recipe_handler.fetch_sub_recipe_context_data_for_get_request(self.object)
+        context.update(sub_recipe_context_data)
         return context
 
     def form_valid(self, form):
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
 
-        context = self.get_context_data()
-        ingredient_formset = context['ingredient_formset']
-        steps_formset = context['step_formset']
-
-        if ingredient_formset.is_valid() or steps_formset.is_valid():
-            ingredient_formset.save()
+        context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
+        ingredients_formset = context.get('ingredient_formset')
+        steps_formset = context.get('step_formset')
+        forms_list = [ingredients_formset, steps_formset]
+        success = sub_recipe_handler.validate_forms(forms_list)
+        if success:
+            ingredients_formset.save()
             steps_formset.save()
             form.save()
         else:
