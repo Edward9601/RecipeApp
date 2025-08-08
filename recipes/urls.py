@@ -13,6 +13,8 @@ urlpatterns = [
     path('recipe/<int:pk>/delete/', recipe_views.RecipeDeleteView.as_view(), name='delete'),
     path('get-categories-tags/', recipe_views.get_categories_and_tags, name='get_categories_and_tags'),
 
+    path('recipe/ingredients', recipe_views.IngredientsPartialView.as_view(), name='new_ingredients'),
+
     path('sub-recipes', sub_recipe_views.SubRecipeListView.as_view(), name='sub_recipes'),
     path('sub-recipes', sub_recipe_views.SubRecipeListView.as_view(), name='sub_recipe_search'),
     path('sub-recipes/<int:pk>', sub_recipe_views.SubRecipeDetailView.as_view(), name='sub_recipes_detail'),

@@ -1,0 +1,42 @@
+{% load static %}
+<div class="modal fade modal-xl" id="ingredientsModal" tabindex="-1" aria-labelledby="ingredientsModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ingredientsModalLabel">Ingredients</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-form-elements">
+                    <div class="ingredients-section mb-4">
+                        <div id="ingredients-list" class="form-check">
+                            {{ ingredient_formset.management_form }}
+                            <div id="ingredient-formset" class="ingredient-container">
+                                {% for ingredient_form in ingredient_formset %}
+                                <div class="ingredient-card">
+                                    <div class="ingredient-form border p-4 rounded shadow">
+                                        {{ ingredient_form.name.label_tag }} {{ ingredient_form.name }}
+                                        {{ ingredient_form.quantity.label_tag }} {{ ingredient_form.quantity }}
+                                        {{ ingredient_form.measurement.label_tag }} {{ ingredient_form.measurement }}
+                                        <button type="button" class="remove-button btn btn-secondary mt-2">Remove</button>
+                                        {{ ingredient_form.DELETE.as_hidden }}
+                                    </div>
+                                    <div class="hidden-undo" style="display: none;">
+                                        Ingredient removed – <button type="button" class="undo-btn btn-secondary mt-2">Undo</button>
+                                    </div>   
+                                </div>  
+                                {% endfor %}
+                            </div>
+                            <button type="button" id="add-ingredient-button" data-action="add-ingredient" data-formset="ingredient">Add Ingredient</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div> 
+</div>
+
+<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>

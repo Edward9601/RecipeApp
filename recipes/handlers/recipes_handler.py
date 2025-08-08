@@ -1,4 +1,4 @@
-from recipes.forms.recipe_forms import fetch_ingredients_and_steps_formsets, RecipeImageForm, RecipeCreateForm
+from recipes.forms.recipe_forms import fetch_ingredients_and_steps_formsets, fetch_ingredients_form, RecipeImageForm, RecipeCreateForm
 from recipes.models.recipe_models import Recipe, Category, Tag, RecipeSubRecipe
 from utils.models import ImageHandler as image_handler
 
@@ -53,6 +53,43 @@ def fetch_recipe_context_data_for_get_request(recipe: Recipe, image_form: Recipe
         'tags': Tag.objects.all(),
         'form': RecipeCreateForm(instance=recipe),
     }
+    return context
+
+
+def fetch_ingredients_formset_for_get_request(recipe: Recipe = None, extra_forms:int =0) -> dict:
+    """
+    Fetch the ingredients form for the recipe.
+    """
+    ingredient_formset = fetch_ingredients_form(extra_forms)
+    context = {}
+    if recipe:
+        context = {
+            'ingredient_formset': ingredient_formset(instance=recipe, prefix='ingredients'),
+            'recipe': recipe,
+        }
+    else:
+        context = {
+            'ingredient_formset': ingredient_formset(prefix='ingredients'),
+            'recipe': None,
+        }
+    return context
+
+
+def fetch_ingredients_form_for_post_request(request: WSGIRequest, recipe: Recipe = None) -> dict:
+    """
+    Fetch the ingredients form for the recipe.
+    """
+    ingredient_formset= fetch_ingredients_form()
+    if recipe:
+        context = {
+            'ingredient_formset': ingredient_formset(request.POST, instance=recipe, prefix='ingredients'),
+            'recipe': recipe,
+        }
+    else:
+        context = {
+            'ingredient_formset': ingredient_formset(request.POST, prefix='ingredients'),
+            'recipe': None,
+        }
     return context
 
 
@@ -202,5 +239,6 @@ def create_recipe_sub_recipe_relationship(recipe: Recipe, sub_recipes):
     except Exception as e:
         return (False, str(e))
     return (True, '')
+
 
    

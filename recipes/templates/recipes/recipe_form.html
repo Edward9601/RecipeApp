@@ -3,16 +3,17 @@
 {% load static %}
 {% block content %}
 <div class="container">
-    <form id="recipe-form" method="POST" action="{% if object %}
-                                                    {% url 'recipes:update' object.id %}
-                                                 {% else %}
-                                                    {% url 'recipes:create' %}
-                                                 {% endif %}" 
-     autocomplete="off" enctype="multipart/form-data">
+    <form id="recipe-form" 
+          method="POST" 
+          action="{% if object %} {% url 'recipes:update' object.id %}
+                  {% else %} {% url 'recipes:create' %}
+                  {% endif %}" 
+         autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
         <div id="categories-hidden"></div>
         <div id="tags-hidden"></div>
         <div id="sub-recipes-hidden"></div>
+        <div id="ingredients-hidden"></div>
         <div class="mb-3">
             {{ form.title|as_crispy_field }}
         </div>
@@ -23,16 +24,22 @@
             {{ image_form.picture|as_crispy_field }}
             <img id="image-preview" src="#" alt="Image preview" style="display:none; max-width: 300px; margin-top: 10px;" />
         </div>
-        <button id="openCategoriesAndTagsButton" type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoriesAndTagsModal"> <!-- Using Bootstrap attributes to trigger modal open-->
-            Add Categories and Tags
-        </button>
-        {% if form.sub_recipes %}
-            <div class="dropdown mb-4">
+        <div class="dropdown mb-4">
+            <button id="openCategoriesAndTagsButton" type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoriesAndTagsModal">
+                Add Categories and Tags
+            </button>
+            <button id="openIngredientsButton" type="button" class="btn btn-primary mb-3" data-bs-target="#ingredientsModal"
+                    hx-get="{% if object %}{% url 'recipes:recipe_ingredients' object.id %}{% else %}{% url 'recipes:new_ingredients' %}{% endif %}"
+                    hx-target="#ingredients-modal-container"
+                    hx-trigger="click">Add Ingredients</button>
+            <div id="ingredients-modal-container">
+            </div>
+            {% if form.sub_recipes %}
                 <button type="button" class="btn btn-primary mb-3" id="subRecipeButton" data-bs-toggle="modal" data-bs-target="#subRecipesModal">
                     Select Sub-Recipes
                 </button>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
         <div class="conteiner-for-ingredients-and-steps">
             {% include 'partials/steps_and_ingredients_for_create_form.html'%}
         </div>

@@ -1,10 +1,10 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
-from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm
+from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm, RecipeIngredientForm
 from ..forms.recipe_filter_forms import RecipeFilterForm
 from utils.helpers.mixins import RegisteredUserAuthRequired
 
@@ -247,3 +247,52 @@ def get_categories_and_tags(request):
         'tags': [{'id': tag.id, 'name': tag.name} for tag in tags]
     }
     return JsonResponse(data)
+
+
+class IngredientsPartialView(RegisteredUserAuthRequired, View):
+    """
+    Handles ingredient modal requests for both new and existing recipes.
+    Supports both GET (display form) and POST (save ingredients).
+    """
+
+    model = Recipe
+    form_class = RecipeIngredientForm
+    template_name = 'partials/ingredients_modal.html'
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+        context = self._get_ingredients_context(pk)
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+        if pk:
+            return self._handle_update_post_request(request, pk)
+        else:
+            context = recipes_handler.fetch_ingredients_form_for_post_request(request, self.object)
+
+
+    def _get_ingredients_context(self, pk=None):
+        if pk:
+            recipe = self.model.objects.get(id=pk)
+            context = recipes_handler.fetch_ingredients_formset_for_get_request(recipe)
+        else:
+            context = recipes_handler.fetch_ingredients_formset_for_get_request(None, extra_forms=1)
+        return context
+
+
+    def _handle_update_post_request(self, request, pk):
+        pass
+
+    def _handle_create_post_request(self, request):
+        context = recipes_handler.fetch_ingredients_form_for_post_request(request)
+
+        ingredient_formset = context.get('ingredient_formset')
+        if ingredient_formset.is_valid():
+            cleaned_data = [
+                form.cleaned_data for form in ingredient_formset.cleaned_data
+                if form.cleaned_data and form.cleaned_data.get('DELETE') is False
+            ]
+
+            request.session['ingredients'] = cleaned_data
+

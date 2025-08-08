@@ -4,7 +4,7 @@ export class SubRecipeManager {
         this.mainForm = null;
         this.mainForm = document.getElementById('sub-recipe-form');
         if (this.mainForm) {
-            new IngredientsAndStepsManager(this.mainForm);
+            new IngredientsAndStepsManager();
         }
     }
 }

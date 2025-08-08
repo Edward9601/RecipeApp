@@ -23,11 +23,7 @@ export class RecipeManager {
     private selectedSubRecipes: Set<number> = new Set();
     private initialSubRecipeSelectionLoaded: boolean = false;
 
-    
-
-
     private imagePreview: HTMLImageElement | null = null;
-
     
     constructor() {
         this.mainForm = document.getElementById('recipe-form') as HTMLFormElement;
@@ -36,46 +32,36 @@ export class RecipeManager {
 
         this.subRecipesModal = document.getElementById('subRecipesModal') as HTMLElement;
         this.subRecipesButton = document.getElementById('subRecipeButton') as HTMLButtonElement;
-        console.log("subRecipesModal", this.subRecipesModal);
-        console.log("subRecipesButton", this.subRecipesButton);
-
-
         if(this.mainForm){
-            this.setupListenersForRecipeForm();
-            new IngredientsAndStepsManager(this.mainForm);
+            this.setupListenersForRecipeForm(this.mainForm);
         }        
     }
 
-    setupListenersForRecipeForm(): void { // Revisit to simplify
-        if(this.mainForm){
-
-            const dropdownButton = this.mainForm.querySelector<HTMLButtonElement>('#subRecipeDropdown');
-            const dropdownMenu = this.mainForm.querySelector<HTMLElement>('#subRecipeDropdownMenu');
-            
-            if (dropdownButton && dropdownMenu) {
-                dropdownButton.addEventListener("click", function (event) {
-                    event.stopPropagation(); // Prevents clicks inside menu from closing it
-                    dropdownMenu.classList.toggle("show");
-                    });
-                }
+    setupListenersForRecipeForm(mainForm: HTMLFormElement): void { // Revisit to simplify
+        const dropdownButton = mainForm.querySelector<HTMLButtonElement>('#subRecipeDropdown');
+        const dropdownMenu = mainForm.querySelector<HTMLElement>('#subRecipeDropdownMenu');
+        
+        if (dropdownButton && dropdownMenu) {
+            dropdownButton.addEventListener("click", (event) => {
+                event.stopPropagation(); // Prevents clicks inside menu from closing it
+                dropdownMenu.classList.toggle("show");
+                });
             }
-            if(this.categoriesAndTagsModal){
+        if(this.categoriesAndTagsModal){
+            if(mainForm.action.includes('update')){
+                
+                // Add a listener for categories and tags button
+                const categoriesAndTagsButton = mainForm.querySelector<HTMLButtonElement>('#openCategoriesAndTagsButton');
+                
+                if (categoriesAndTagsButton && !this.initialeSelectionsLoaded) {
+                    categoriesAndTagsButton.addEventListener('click', () => {
 
-
-                if(this.mainForm?.action.includes('update')){
-                   
-                    // Add a listener for categories and tags button
-                    const categoriesAndTagsButton = this.mainForm.querySelector<HTMLButtonElement>('#openCategoriesAndTagsButton');
-                   
-                    if (categoriesAndTagsButton && !this.initialeSelectionsLoaded) {
-                        categoriesAndTagsButton.addEventListener('click', () => {
-                        
-                            this.loadCategoriesAndTagsInitialSelections();});
-
-                            // Load initial selections only once
-                            this.initialeSelectionsLoaded = true;
-                        }
+                        // We are sure that categoriesAndTagsModal isn't null, thus "!"
+                        this.loadCategoriesAndTagsInitialSelections(this.categoriesAndTagsModal!);}); 
+                        // Load initial selections only once
+                        this.initialeSelectionsLoaded = true;
                     }
+                }
 
             this.categoriesAndTagsModal.addEventListener('change', (event)=> {
                 const target = event.target as HTMLInputElement;
@@ -103,52 +89,48 @@ export class RecipeManager {
             this.categoriesAndTagsModal.addEventListener('hidden.bs.modal', () => {
                 this.updateFormSelections();
             });
-
-            if(this.imagePreview && this.mainForm){
-                const fileInput = this.mainForm.querySelector<HTMLInputElement>('input[id="id_picture"]');
-                if(fileInput){
-                    fileInput.addEventListener('change', () => {
-                        RecipeManager.previewImage(fileInput, this.imagePreview);
-                    });
-                }
+        }
+        if(this.imagePreview){
+            const fileInput = mainForm.querySelector<HTMLInputElement>('input[id="id_picture"]');
+            if(fileInput){
+                fileInput.addEventListener('change', () => {
+                    RecipeManager.previewImage(fileInput, this.imagePreview);
+                });
             }
+        }
 
-            if(this.subRecipesModal && this.subRecipesButton){
+        if(this.subRecipesModal){
+            // Load initial selections for sub-recipes
+            if (!this.initialSubRecipeSelectionLoaded && this.subRecipesButton) {
                 this.subRecipesButton.addEventListener('click', () => {
-                    // Load initial selections for sub-recipes
-                    if (!this.initialSubRecipeSelectionLoaded) {
-                        this.loadInitialSubRecipeSelections();
-                        this.initialSubRecipeSelectionLoaded = true;
-                    }
-                });
-
-                // Handle sub-recipe selection changes
-                this.subRecipesModal.addEventListener('change', (event) => {
-                    const target = event.target as HTMLInputElement;
-                    if (target.type === 'checkbox' && target.id.startsWith('id_sub_recipes_')) {
-                        const value = parseInt(target.value);
-                        if (target.checked) {
-                            this.selectedSubRecipes.add(value);
-                        } else {
-                            this.selectedSubRecipes.delete(value);
-                        }
-                    }
-                });
-
-                // Update selections when modal is hidden
-                this.subRecipesModal.addEventListener('hidden.bs.modal', () => {
-                    this.updateSubRecipeSelections();
+                    this.loadInitialSubRecipeSelections(this.subRecipesModal!);
+                    this.initialSubRecipeSelectionLoaded = true;
                 });
             }
-        }  
+
+            // Handle sub-recipe selection changes
+            this.subRecipesModal.addEventListener('change', (event) => {
+                const target = event.target as HTMLInputElement;
+                if (target.type === 'checkbox' && target.id.startsWith('id_sub_recipes_')) {
+                    const value = parseInt(target.value);
+                    if (target.checked) {
+                        this.selectedSubRecipes.add(value);
+                    } else {
+                        this.selectedSubRecipes.delete(value);
+                    }
+                }
+            });
+
+            // Update selections when modal is hidden
+            this.subRecipesModal.addEventListener('hidden.bs.modal', () => {
+                this.updateSubRecipeSelections(mainForm);
+            });
+        }
     }
 
-    private loadInitialSubRecipeSelections(): void {
-        if (!this.subRecipesModal) {
-            return;
-        }
+    private loadInitialSubRecipeSelections(subRecipesModal: HTMLElement): void {
         // Load initial state from form
-        const subRecipeInputs = this.subRecipesModal.querySelectorAll<HTMLInputElement>('input[id^="id_sub_recipes_"]');
+        const subRecipeInputs = subRecipesModal.querySelectorAll<HTMLInputElement>('input[id^="id_sub_recipes_"]');
         subRecipeInputs.forEach(input => {
             if (input.checked) {
                 this.selectedSubRecipes.add(parseInt(input.value));
@@ -156,28 +138,23 @@ export class RecipeManager {
         });
     }
 
-    private updateSubRecipeSelections(): void {
-        if (!this.mainForm) return;
-
+    private updateSubRecipeSelections(mainForm: HTMLElement): void {
         // Remove old hidden inputs
-        this.mainForm.querySelectorAll('input[name="sub_recipes"]').forEach(input => input.remove());
+        mainForm.querySelectorAll('input[name="sub_recipes"]').forEach(input => input.remove());
 
         // Add new hidden inputs for sub-recipes
-        const subRecipesContainer = this.mainForm.querySelector<HTMLElement>('#sub-recipes-hidden');
+        const subRecipesContainer = mainForm.querySelector<HTMLElement>('#sub-recipes-hidden');
         if (subRecipesContainer) {
             RecipeManager.addHiddenInputs(subRecipesContainer, this.selectedSubRecipes, 'sub_recipes');
         }
     }
 
 
-    private loadCategoriesAndTagsInitialSelections(): void {
+    private loadCategoriesAndTagsInitialSelections(categoriesAndTagsModal: HTMLElement): void {
 
-        if (!this.categoriesAndTagsModal) {
-            return;
-        }
         // Load initial state from form
-        const categoryInputs = this.categoriesAndTagsModal.querySelectorAll<HTMLInputElement>('input[id^="id_categories_"]');
-        const tagInputs = this.categoriesAndTagsModal.querySelectorAll<HTMLInputElement>('input[id^="id_tags_"]');
+        const categoryInputs = categoriesAndTagsModal.querySelectorAll<HTMLInputElement>('input[id^="id_categories_"]');
+        const tagInputs = categoriesAndTagsModal.querySelectorAll<HTMLInputElement>('input[id^="id_tags_"]');
 
 
         categoryInputs.forEach(input => {
