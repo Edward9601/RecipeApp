@@ -3,9 +3,8 @@
 {% block title %} Recipe: {{ object.title }} {% endblock %}
 
 {% block content %}
-<div class="container my-4">
+<div class="recipe-detail-container my-4">
     <h1 class="text-center mb-4">{{ object.title }}</h1>
-
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
@@ -21,7 +20,6 @@
             </div>
         </div>
     </div>
-
     <div class="row mt-4">
         <div class="col-md-6 mb-4">
             {% if object.categories.all %}
@@ -45,7 +43,7 @@
         </div>
     
         <div class="col-md-6">
-            <div class="card p-3">
+            <div id="ingredients-detail-list" class="card p-3">
                 <h2>Ingredients</h2>
                 <ul>
                     {% for ingredient in object.ingredients.all %}
@@ -77,6 +75,12 @@
                         </div>
                     {% endfor %}
                 {% endif %}
+                {% if can_edit %}
+                    <div class="mt-3 pd-3">
+                        {% include 'recipes/partials/recipe_action_buttons.html' with action="Edit" %}
+                    </div>
+                    <div id="ingredients-modal-container"></div>
+                {% endif %}
             </div>
         </div>
 
@@ -84,8 +88,8 @@
             <div class="card p-3">
                 <h2>Steps</h2>
                 <ol>
-                    {% for step in object.steps.all %}
-                        <li>{{ step.description }}</li>
+                    {% for steps in object.steps.all %}
+                        <li>{{ steps.description }}</li>
                     {% empty %}
                         <li>No steps added yet.</li>
                     {% endfor %}
@@ -96,8 +100,8 @@
                         <div class="mt-2">
                             <h5><strong><a href="{% url 'recipes:sub_recipes_detail' sub_recipe.id %}">{{ sub_recipe.title }}</a></strong></h5>
                             <ul>
-                                {% for sub_step in sub_recipe.sub_steps.all %}
-                                    <li>{{ sub_step.description }}</li>
+                                {% for sub_steps in sub_recipe.sub_steps.all %}
+                                    <li>{{ sub_steps.description }}</li>
                                 {% empty %}
                                 {% endfor %}
                             </ul>
@@ -116,4 +120,6 @@
         </div>
     {% endif %}
 </div>
+<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
 {% endblock %}
+

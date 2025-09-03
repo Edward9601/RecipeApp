@@ -5,9 +5,7 @@
 <div class="container">
     <form id="recipe-form" 
           method="POST" 
-          action="{% if object %} {% url 'recipes:update' object.id %}
-                  {% else %} {% url 'recipes:create' %}
-                  {% endif %}" 
+          action="{% url 'recipes:create' %}" 
          autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
         <div id="categories-hidden"></div>
@@ -28,27 +26,29 @@
             <button id="openCategoriesAndTagsButton" type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoriesAndTagsModal">
                 Add Categories and Tags
             </button>
-            <button id="openIngredientsButton" type="button" class="btn btn-primary mb-3" data-bs-target="#ingredientsModal"
-                    hx-get="{% if object %}{% url 'recipes:recipe_ingredients' object.id %}{% else %}{% url 'recipes:new_ingredients' %}{% endif %}"
-                    hx-target="#ingredients-modal-container"
-                    hx-trigger="click">Add Ingredients</button>
-            <div id="ingredients-modal-container">
-            </div>
+            {% include 'recipes/partials/recipe_action_buttons.html' with action="Add" %}
             {% if form.sub_recipes %}
                 <button type="button" class="btn btn-primary mb-3" id="subRecipeButton" data-bs-toggle="modal" data-bs-target="#subRecipesModal">
                     Select Sub-Recipes
                 </button>
             {% endif %}
         </div>
+        <div id="ingredients-modal-container"></div>
         <div class="conteiner-for-ingredients-and-steps">
-            {% include 'partials/steps_and_ingredients_for_create_form.html'%}
+            {% include 'recipes/partials/steps_and_ingredients_for_create_form.html'%}
+        </div>
+        <div class="form-group py-3">
+            <input class="btn btn-outline-primary" type="submit" value="Save" />
+        </div>
+        <div class="border-top pt-3">
+            <a href="{% url 'recipes:home' %}">Cancel</a>
         </div>
     </form>
 </div>
 <script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
 <!--Modal for Categories and Tags  -->
-{% include 'partials/categories_and_tags_modal.html' %}
-{% include 'partials/sub_recipe_modal.html' %}
+{% include 'recipes/partials/categories_and_tags_modal.html' %}
+{% include 'recipes/partials/sub_recipe_modal.html' %}
 {% endblock %}
 
 

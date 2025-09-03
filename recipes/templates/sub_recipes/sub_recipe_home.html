@@ -3,9 +3,8 @@
 {% block title %} Sub Recipe {% endblock %}
 {% block content %}
 
-<h1>Sub Recipe Page</h1>
 <section>
-    {% include 'partials/search.html'%}
+    {% include 'recipes/partials/search.html'%}
 </section>
 {% if user.username != 'guest' and user.is_authenticated%}
     <div>
@@ -14,7 +13,7 @@
 {% endif %}
 <section>
     <div id="results" class="container">
-        {% include 'partials/sub_recipe_list.html' %}
+        {% include 'recipes/partials/sub_recipe_list.html' %}
     </div>
 <section>
 {% endblock %}

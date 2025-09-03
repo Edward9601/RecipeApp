@@ -1,0 +1,75 @@
+{% load static %}
+<div class="modal fade modal-xl" id="stepsModal" tabindex="-1" aria-labelledby="stepsModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stepsModalLabel">Steps</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-form-elements">
+                    <div class="steps-section mb-4">
+                        <form id="steps-modal-from">
+                            <div id="steps-list" class="form-check">
+                               {{ steps_formset.management_form }}
+                                <div id="steps-formset">
+                                    {% for steps_form in steps_formset %}
+                                        <div class="steps-form">
+                                            {{ steps_form.id }}
+                                            <div>
+                                                {{ steps_form.order }}
+                                            </div>
+                                            <div>
+                                                {{ steps_form.description.label_tag }} {{ steps_form.description }}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </form>
+                        <button type="button" id="add-steps-button" data-action="add-steps" data-formset="steps">Add Step</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" 
+                        id="save-steps-button"
+                        class="btn btn-primary" 
+                        data-mode="{% if recipe.id %} update {% else%} create {% endif %}"
+                        data-recipe-id="{{ recipe.id }}"
+                        data-url="{% if recipe.id %}{% url 'recipes:update_recipe_steps' recipe.id %}{% endif %}"
+                        data-bs-dismiss="modal">Save Steps</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div> 
+</div>
+
+<div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger" id="unsavedChangesModalLabel">
+                     Unsaved Changes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">You have unsaved changes. What would you like to do?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="save-changes-btn" class="btn btn-primary">
+                    Save Changes
+                </button>
+                <button type="button" id="discard-changes-btn" class="btn btn-danger">
+                    Discard Changes
+                </button>
+                <button type="button" id="cancel-close-btn" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>

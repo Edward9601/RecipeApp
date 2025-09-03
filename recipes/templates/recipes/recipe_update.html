@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block content %}
+<div class="container">
+    <form id="recipe-form" 
+          method="POST" 
+          action="{% url 'recipes:update' object.id %}" 
+         autocomplete="off" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div id="ingredients-hidden"></div>
+        <div class="mb-3">
+            {{ form.title|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+            {{ form.description|as_crispy_field }}
+        </div>
+        <div class="mb-3" id="id_picture">
+            {{ image_form.picture|as_crispy_field }}
+            <img id="image-preview" src="#" alt="Image preview" style="display:none; max-width: 300px; margin-top: 10px;" />
+        </div>
+        <div class="dropdown mb-4">
+            <button id="openCategoriesAndTagsButton" type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoriesAndTagsModal">
+                Add Categories and Tags
+            </button>
+            {% include 'recipes/partials/recipe_action_buttons.html' with action="Edit"%}
+            {% if form.sub_recipes %}
+                <button type="button" class="btn btn-primary mb-3" id="subRecipeButton" data-bs-toggle="modal" data-bs-target="#subRecipesModal">
+                    Select Sub-Recipes
+                </button>
+            {% endif %}
+        </div>
+        <div id="ingredients-modal-container"></div>
+        <div class="conteiner-for-ingredients-and-steps">
+            {% include 'recipes/partials/steps_and_ingredients_for_create_form.html'%}
+        </div>
+        <div class="form-group py-3">
+            <input class="btn btn-outline-primary" type="submit" value="Save" />
+        </div>
+        <div class="border-top pt-3">
+            <a href="{% url 'recipes:home' %}">Cancel</a>
+        </div>
+    </form>
+</div>
+<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
+<!--Modal for Categories and Tags  -->
+{% include 'recipes/partials/categories_and_tags_modal.html' %}
+{% include 'recipes/partials/sub_recipe_modal.html' %}
+{% endblock %}
+
+

@@ -117,10 +117,10 @@ ROOT_URLCONF = 'mywebsite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates'),
-                 os.path.join(BASE_DIR, 'recipes/templates/recipes')
-                 ],
-        'APP_DIRS': True,
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),  # Project-level templates
+        ],
+        'APP_DIRS': True,  # This will automatically find app-level templates
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',

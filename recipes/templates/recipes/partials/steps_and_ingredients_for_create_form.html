@@ -1,0 +1,28 @@
+
+<h3>Steps</h3>
+{{ steps_formset.management_form }}
+<div id="steps-formset">
+    {% for steps_form in steps_formset %}
+        <div class="steps-form">
+            {{ steps_form.id }}
+            <div>
+                {{ steps_form.order }}
+            </div>
+            <div>
+                {{ steps_form.description.label_tag }} {{ steps_form.description }}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+<!-- Empty form (hidden initially) to serve as template for adding new forms -->
+<div id="empty-steps-form" style="display: none;" class="hidden">
+    <div class="steps-form">
+      <div>
+         {{ steps_formset.empty_form.order }}
+      </div>
+      <div>
+        {{ steps_formset.empty_form.description.label_tag }} {{ steps_formset.empty_form.description }}
+      </div>
+    </div>
+</div>
+<button id="add-steps-button" type="button" data-action="add-steps" data-formset="steps">Add Step</button>
