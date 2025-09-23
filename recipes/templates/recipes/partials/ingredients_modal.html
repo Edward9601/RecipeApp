@@ -9,7 +9,7 @@
             <div class="modal-body">
                 <div id="modal-form-elements">
                     <div class="ingredients-section mb-4">
-                        <form id="ingredient-modal-from">
+                        <form id="ingredients-modal-from">
                             <div id="ingredients-list" class="form-check">
                                 {{ ingredients_formset.management_form }}
                                 <div id="ingredients-formset" class="ingredients-container">
@@ -21,7 +21,7 @@
                                                 {{ ingredient_form.quantity.label_tag }} {{ ingredient_form.quantity }}
                                                 {{ ingredient_form.measurement.label_tag }} {{ ingredient_form.measurement }}
                                                 <button type="button" class="remove-button btn btn-secondary mt-2">Remove</button>
-                                                {{ ingredients_form.DELETE.as_hidden }}
+                                                {{ ingredient_form.DELETE.as_hidden }}
                                             </div>
                                             <div class="hidden-undo" style="display: none;">
                                                 Ingredient removed – <button type="button" class="undo-btn btn-secondary mt-2">Undo</button>
@@ -49,32 +49,4 @@
         </div>
     </div> 
 </div>
-
-<div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-danger" id="unsavedChangesModalLabel">
-                     Unsaved Changes
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-0">You have unsaved changes. What would you like to do?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="save-changes-btn" class="btn btn-primary">
-                    Save Changes
-                </button>
-                <button type="button" id="discard-changes-btn" class="btn btn-danger">
-                    Discard Changes
-                </button>
-                <button type="button" id="cancel-close-btn" class="btn btn-secondary" data-bs-dismiss="modal">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>

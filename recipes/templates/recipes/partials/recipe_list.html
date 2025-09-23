@@ -4,14 +4,14 @@
                     <div class="card my-4">
                         {% if recipe.images.first %}
                           <a href="{% url 'recipes:detail' recipe.pk %}">
-                            <img src="{{ recipe.images.first.get_thumbnail_url }}" class="image" alt="{{ recipe.title }}">
+                            <img src="{{ recipe.images.first.get_thumbnail_url }}" class="image" alt="{{ recipe.title|title }}">
                           </a>
                         {% endif %}
                         {% if not recipe.images %}
                             <p class="text-center text-muted py-4">No image available.</p>
                         {% endif %}
                         <div class="card-body">
-                            <a href="{% url 'recipes:detail' recipe.pk %}"  class="card-title"><h5>{{ recipe.title }}</h5></a>
+                            <a href="{% url 'recipes:detail' recipe.pk %}"  class="card-title"><h5>{{ recipe.title|title }}</h5></a>
                             <p class="card-text">{{ recipe.description| truncatechars:200 }}</p>
                         </div>
                     </div>

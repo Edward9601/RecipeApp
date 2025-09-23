@@ -1,28 +1,36 @@
 {% load static %}
 <div class="modal fade modal-xl" id="stepsModal" tabindex="-1" aria-labelledby="stepsModalLabel">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="stepsModalLabel">Steps</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            
             <div class="modal-body">
                 <div id="modal-form-elements">
                     <div class="steps-section mb-4">
                         <form id="steps-modal-from">
                             <div id="steps-list" class="form-check">
-                               {{ steps_formset.management_form }}
-                                <div id="steps-formset">
+                                {{ steps_formset.management_form }}
+                                <div id="steps-formset" class="steps-container">
                                     {% for steps_form in steps_formset %}
-                                        <div class="steps-form">
-                                            {{ steps_form.id }}
-                                            <div>
-                                                {{ steps_form.order }}
+                                        {{ steps_form.id }}
+                                        <div class="steps-card mb-4" style="max-width: 600px; margin: 0 auto;">
+                                            <div class="step-form border p-4 rounded shadow">
+                                                <div class="mb-3">
+                                                    {{ steps_form.order.as_hidden }} 
+                                                    {{ steps_form.description.label_tag }} {{ steps_form.description }}
+                                                </div>
+                                                <div class="text-end">
+                                                    <button type="button" class="remove-button btn btn-secondary">Remove</button>
+                                                </div>
+                                                {{ steps_form.DELETE.as_hidden }}
                                             </div>
-                                            <div>
-                                                {{ steps_form.description.label_tag }} {{ steps_form.description }}
-                                            </div>
-                                        </div>
+                                            <div class="hidden-undo" style="display: none;">
+                                                Step removed – <button type="button" class="undo-btn btn-secondary mt-2">Undo</button>
+                                            </div>   
+                                        </div>  
                                     {% endfor %}
                                 </div>
                             </div>

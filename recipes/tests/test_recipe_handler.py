@@ -217,7 +217,7 @@ class RecipeHandlerTestCase(BaseTestCase):
         forms_list = [ingredient_formset, step_formset]
 
         # Act
-        response = recipes_handler.validate_forms(forms_list)
+        response = recipes_handler.forms_valid(forms_list)
 
         # Assert
         self.assertTrue(response)
@@ -238,7 +238,7 @@ class RecipeHandlerTestCase(BaseTestCase):
         forms_list = [ingredient_formset, step_formset]
 
         # Act
-        response = recipes_handler.validate_forms(forms_list)
+        response = recipes_handler.forms_valid(forms_list)
 
         # Assert
         self.assertFalse(response)

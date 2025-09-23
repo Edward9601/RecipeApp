@@ -1,0 +1,5 @@
+{% load static %}
+<button id="openStepsButton" type="button" class="btn btn-primary mb-3" data-bs-target="#stepsModal"
+        hx-get="{% if object %}{% url 'recipes:fetch_recipe_steps' object.id %}{% else %}{% url 'recipes:fetch_steps_form' %}{% endif %}"
+        hx-target="#steps-modal-container"
+        hx-trigger="click">{{ action }} Steps</button>

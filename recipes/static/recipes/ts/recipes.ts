@@ -141,7 +141,6 @@ export class RecipeManager {
     private updateSubRecipeSelections(mainForm: HTMLElement): void {
         // Remove old hidden inputs
         mainForm.querySelectorAll('input[name="sub_recipes"]').forEach(input => input.remove());
-
         // Add new hidden inputs for sub-recipes
         const subRecipesContainer = mainForm.querySelector<HTMLElement>('#sub-recipes-hidden');
         if (subRecipesContainer) {

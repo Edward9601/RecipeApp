@@ -1,10 +1,10 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.urls import reverse_lazy
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
-from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm, RecipeIngredientForm
+from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm, RecipeIngredientForm, RecipeStepForm
 from ..forms.recipe_filter_forms import RecipeFilterForm
 from utils.helpers.mixins import RegisteredUserAuthRequired
 
@@ -74,7 +74,7 @@ class RecipeListView(ListView):
         else:
             recipes = self.model.objects.all()
 
-        return render(request, 'partials/recipe_list.html', {'recipes': recipes})
+        return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
 
 
 class RecipeDetailView(DetailView):
@@ -121,6 +121,7 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
     form_class = RecipeCreateForm
     image_form = RecipeImageForm
     intermidiate_table = RecipeSubRecipe
+    template_name = 'recipes/recipe_create.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -163,7 +164,7 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     model = Recipe
     form_class = RecipeCreateForm
     image_form = RecipeImageForm
-    template_name = 'recipes/recipe_form.html'
+    template_name = 'recipes/recipe_update.html'
     intermidiate_table = RecipeSubRecipe
 
     def get_context_data(self, **kwargs):
@@ -257,42 +258,175 @@ class IngredientsPartialView(RegisteredUserAuthRequired, View):
 
     model = Recipe
     form_class = RecipeIngredientForm
-    template_name = 'partials/ingredients_modal.html'
+    template_name = 'recipes/partials/ingredients_modal.html'
 
     def get(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
         context = self._get_ingredients_context(pk)
+        
         return render(request, self.template_name, context)
     
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
         if pk:
             return self._handle_update_post_request(request, pk)
-        else:
-            context = recipes_handler.fetch_ingredients_form_for_post_request(request, self.object)
+        error_response = {
+            'errorMessage': 'Request missing recipe ID.'
+        }
+        return JsonResponse(error_response, status=400)
 
 
     def _get_ingredients_context(self, pk=None):
         if pk:
-            recipe = self.model.objects.get(id=pk)
-            context = recipes_handler.fetch_ingredients_formset_for_get_request(recipe)
+            cache_key = f'recipe_ingredients_{pk}'
+            context = recipes_handler.get_cached_object(cache_key)
+            if not context:
+                recipe = self.model.objects.get(id=pk)
+                context = recipes_handler.fetch_partial_recipe_context_data_for_get(recipe, 'ingredients')
+                recipes_handler.set_cached_object(cache_key, context)
         else:
-            context = recipes_handler.fetch_ingredients_formset_for_get_request(None, extra_forms=1)
+            cache_key = f'recipe_ingredients'
+            context = recipes_handler.get_cached_object(cache_key)
+            if not context:
+                context = recipes_handler.fetch_partial_recipe_context_data_for_get(None,'ingredients', extra_forms=1)
+                recipes_handler.set_cached_object(cache_key, context)
+        return context
+ 
+
+    def _handle_update_post_request(self, request, pk):
+        """
+        Handles the POST request for updating ingredients of an existing recipe.
+        This method processes the form data, validates the ingredient formset,
+        and updates the recipe's ingredients.
+        """
+        
+        try:
+            recipe = get_object_or_404(self.model, pk=pk)
+            context = recipes_handler.fetch_partial_form_for_post_request(request, 'ingredients', recipe)
+
+            ingredients_formset = context.get('ingredients_formset')
+            if ingredients_formset.is_valid():
+                ingredients_formset.save()
+                ingredients_cache_key = f'recipe_ingredients_{pk}'
+                recipe_ingredients_cache_key = f'recipe_detail_{pk}'
+                recipes_handler.invalidate_recipe_cache(recipe_ingredients_cache_key)
+                recipes_handler.invalidate_recipe_cache(ingredients_cache_key)
+
+                updated_ingredients = [
+                    {
+                        'id': ing.id,
+                        'name': ing.name,
+                        'quantity': ing.quantity or '',
+                        'measurement': ing.measurement or ''
+                    }
+                    for ing in recipe.ingredients.all()
+                ]
+                message = {'success': True,
+                           'ingredients': updated_ingredients, 
+                           'errorMessage': '',
+                           'status': 204}
+                return JsonResponse(message)
+            error_response = {'success': False,
+                              'errorMessage': 'There were errors in the form submission.',
+                              'formErrors': ingredients_formset.management_form.errors,
+                              'status': 400
+            }
+            return JsonResponse(error_response)
+        except self.model.DoesNotExist:
+            error_response = {'success': False,
+                            'errorMessage': 'Recipe not found.',
+                            'status' : 404
+            }
+            return JsonResponse(error_response)
+        
+
+
+class StepsPartialView(RegisteredUserAuthRequired, View):
+    """
+    Handles steps modal requests for both new and existing recipes.
+    Supports both GET (display form) and POST (save steps).
+    """
+
+    model = Recipe
+    form_class = RecipeStepForm
+    template_name = 'recipes/partials/steps_modal.html'
+
+    def get(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+        context = self._get_steps_context(pk)
+        
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        pk = kwargs.get('pk')
+        if pk:
+            return self._handle_update_post_request(request, pk)
+        error_response = {
+            'errorMessage': 'Request missing recipe ID.'
+        }
+        return JsonResponse(error_response, status=400)
+
+
+    def _get_steps_context(self, pk=None):
+        if pk:
+            cache_key = f'recipe_steps_{pk}'
+            context = recipes_handler.get_cached_object(cache_key)
+            if not context:
+                recipe = self.model.objects.get(id=pk)
+                context = recipes_handler.fetch_partial_recipe_context_data_for_get(recipe, 'steps')
+                recipes_handler.set_cached_object(cache_key, context)
+        else:
+            cache_key = f'recipe_steps'
+            context = recipes_handler.get_cached_object(cache_key)
+            if not context:
+                context = recipes_handler.fetch_partial_recipe_context_data_for_get(None, 'steps', extra_forms=1)
+                recipes_handler.set_cached_object(cache_key, context)
         return context
 
 
     def _handle_update_post_request(self, request, pk):
-        pass
+        """
+        Handles the POST request for updating steps of an existing recipe.
+        This method processes the form data, validates the ingredient formset,
+        and updates the recipe's steps.
+        """
+        
+        try:
+            recipe = get_object_or_404(self.model, pk=pk)
+            context = recipes_handler.fetch_partial_form_for_post_request(request,'steps', recipe)
 
-    def _handle_create_post_request(self, request):
-        context = recipes_handler.fetch_ingredients_form_for_post_request(request)
+            steps_formset = context.get('steps_formset')
+            if steps_formset.is_valid():
+                steps_formset.save()
+                ingredients_cache_key = f'recipe_steps_{pk}'
+                recipe_ingredients_cache_key = f'recipe_detail_{pk}'
+                recipes_handler.invalidate_recipe_cache(recipe_ingredients_cache_key)
+                recipes_handler.invalidate_recipe_cache(ingredients_cache_key)
 
-        ingredient_formset = context.get('ingredient_formset')
-        if ingredient_formset.is_valid():
-            cleaned_data = [
-                form.cleaned_data for form in ingredient_formset.cleaned_data
-                if form.cleaned_data and form.cleaned_data.get('DELETE') is False
-            ]
-
-            request.session['ingredients'] = cleaned_data
+                updated_steps = [
+                    {
+                        'id': step.id,
+                        'order': step.order,
+                        'description': step.description or ''
+                    }
+                    for step in recipe.steps.all()
+                ]
+                message = {'success': True,
+                           'steps': updated_steps, 
+                           'errorMessage': '',
+                           'status': 204}
+                return JsonResponse(message)
+            error_response = {'success': False,
+                              'errorMessage': 'There were errors in the form submission.',
+                              'formErrors': steps_formset.management_form.errors,
+                              'status': 400
+            }
+            return JsonResponse(error_response)
+        except self.model.DoesNotExist:
+            error_response = {'success': False,
+                            'errorMessage': 'Recipe not found.',
+                            'status' : 404
+            }
+            return JsonResponse(error_response)
+        
 

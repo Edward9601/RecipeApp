@@ -3,3 +3,4 @@
         hx-get="{% if object %}{% url 'recipes:fetch_recipe_ingredients' object.id %}{% else %}{% url 'recipes:fetch_ingredients_form' %}{% endif %}"
         hx-target="#ingredients-modal-container"
         hx-trigger="click">{{ action }} Ingredients</button>
+
