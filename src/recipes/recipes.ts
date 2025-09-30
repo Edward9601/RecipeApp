@@ -1,5 +1,3 @@
-import { IngredientsAndStepsManager } from './ingredients_and_steps.js';
-
 enum elementIdentifier {
     CATEGORIES = 'categories',
     TAGS = 'tags'
@@ -144,7 +142,7 @@ export class RecipeManager {
         // Add new hidden inputs for sub-recipes
         const subRecipesContainer = mainForm.querySelector<HTMLElement>('#sub-recipes-hidden');
         if (subRecipesContainer) {
-            RecipeManager.addHiddenInputs(subRecipesContainer, this.selectedSubRecipes, 'sub_recipes');
+            this.addHiddenCheckboxInputs(subRecipesContainer, this.selectedSubRecipes, 'sub_recipes');
         }
     }
 
@@ -180,25 +178,25 @@ export class RecipeManager {
         // Add new hidden inputs for categories
         const categoriesContainer = this.mainForm.querySelector<HTMLElement>('#categories-hidden');
         if (categoriesContainer) {
-            RecipeManager.addHiddenInputs(categoriesContainer, this.selectedCategories, elementIdentifier.CATEGORIES);
+            this.addHiddenCheckboxInputs(categoriesContainer, this.selectedCategories, elementIdentifier.CATEGORIES);
         }
         // Add new hidden inputs for tags
         const tagsContainer = this.mainForm.querySelector<HTMLElement>('#tags-hidden');
         if (tagsContainer) {
-            RecipeManager.addHiddenInputs(tagsContainer,this.selectedTags, elementIdentifier.TAGS);
+            this.addHiddenCheckboxInputs(tagsContainer,this.selectedTags, elementIdentifier.TAGS);
         }
     }
 
-    private static addHiddenInputs(checkboxes: HTMLElement,selectedElements: Set<number>, elementIdentifier: string): void {
+
+    private addHiddenCheckboxInputs(checkboxes: HTMLElement,selectedElements: Set<number>, elementIdentifier: string): void {
         selectedElements.forEach(id => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = `${elementIdentifier}`;
-        input.value = id.toString();
-        checkboxes?.appendChild(input);
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `${elementIdentifier}`;
+            input.value = id.toString();
+            checkboxes?.appendChild(input);
         });
     }
-
     private static previewImage(fileInput: HTMLInputElement, imagePreview: HTMLImageElement | null): void {
         if (!fileInput || !imagePreview) {
             return;

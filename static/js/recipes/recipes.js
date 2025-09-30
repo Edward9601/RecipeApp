@@ -126,7 +126,7 @@ export class RecipeManager {
         // Add new hidden inputs for sub-recipes
         const subRecipesContainer = mainForm.querySelector('#sub-recipes-hidden');
         if (subRecipesContainer) {
-            RecipeManager.addHiddenInputs(subRecipesContainer, this.selectedSubRecipes, 'sub_recipes');
+            this.addHiddenCheckboxInputs(subRecipesContainer, this.selectedSubRecipes, 'sub_recipes');
         }
     }
     loadCategoriesAndTagsInitialSelections(categoriesAndTagsModal) {
@@ -152,15 +152,15 @@ export class RecipeManager {
         // Add new hidden inputs for categories
         const categoriesContainer = this.mainForm.querySelector('#categories-hidden');
         if (categoriesContainer) {
-            RecipeManager.addHiddenInputs(categoriesContainer, this.selectedCategories, elementIdentifier.CATEGORIES);
+            this.addHiddenCheckboxInputs(categoriesContainer, this.selectedCategories, elementIdentifier.CATEGORIES);
         }
         // Add new hidden inputs for tags
         const tagsContainer = this.mainForm.querySelector('#tags-hidden');
         if (tagsContainer) {
-            RecipeManager.addHiddenInputs(tagsContainer, this.selectedTags, elementIdentifier.TAGS);
+            this.addHiddenCheckboxInputs(tagsContainer, this.selectedTags, elementIdentifier.TAGS);
         }
     }
-    static addHiddenInputs(checkboxes, selectedElements, elementIdentifier) {
+    addHiddenCheckboxInputs(checkboxes, selectedElements, elementIdentifier) {
         selectedElements.forEach(id => {
             const input = document.createElement('input');
             input.type = 'hidden';
