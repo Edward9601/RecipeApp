@@ -43,10 +43,10 @@
                         data-mode="{% if recipe.id %} update {% else%} create {% endif %}"
                         data-recipe-id="{{ recipe.id }}"
                         data-url="{% if recipe.id %}{% url 'recipes:update_recipe_ingredients' recipe.id %}{% endif %}"
-                        data-bs-dismiss="modal">Save Ingredients</button>
+                        >Save Ingredients</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div> 
 </div>
-<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
+<script type="module" src="{% static 'js/recipes/main.js' %}"></script>

@@ -56,7 +56,7 @@ class SubRecipeListView(ListView):
                 sub_recipes = query_set.distinct()
         else:
             sub_recipes = self.model.objects.all()
-        return render(request, 'partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
+        return render(request, 'recipes/partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
 
 
 class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
@@ -80,11 +80,11 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
         self.object = form.save(commit=False)
 
         context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
-        ingredient_formset = context['ingredient_formset']
+        ingredients_formset = context['ingredients_formset']
         steps_formset = context['step_formset']
-        if ingredient_formset.is_valid() and steps_formset.is_valid():
+        if ingredients_formset.is_valid() and steps_formset.is_valid():
             form.save()
-            ingredient_formset.save()
+            ingredients_formset.save()
             steps_formset.save()
         else:
             return super().form_invalid(form)
@@ -148,7 +148,7 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         self.object = form.save(commit=False)
 
         context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
-        ingredients_formset = context.get('ingredient_formset')
+        ingredients_formset = context.get('ingredients_formset')
         steps_formset = context.get('step_formset')
         forms_list = [ingredients_formset, steps_formset]
         success = sub_recipe_handler.validate_forms(forms_list)

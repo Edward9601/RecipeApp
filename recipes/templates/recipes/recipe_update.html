@@ -8,7 +8,9 @@
           action="{% url 'recipes:update' object.id %}" 
          autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
-        <div id="ingredients-hidden"></div>
+        <div id="categories-hidden"></div>
+        <div id="tags-hidden"></div>
+        <div id="sub-recipes-hidden"></div>
         <div class="mb-3">
             {{ form.title|as_crispy_field }}
         </div>
@@ -24,6 +26,7 @@
                 Add Categories and Tags
             </button>
             {% include 'recipes/partials/recipe_action_buttons.html' with action="Edit"%}
+            {% include 'recipes/partials/recipe_steps_action_button.html' with action="Edit" %}
             {% if form.sub_recipes %}
                 <button type="button" class="btn btn-primary mb-3" id="subRecipeButton" data-bs-toggle="modal" data-bs-target="#subRecipesModal">
                     Select Sub-Recipes
@@ -31,9 +34,7 @@
             {% endif %}
         </div>
         <div id="ingredients-modal-container"></div>
-        <div class="conteiner-for-ingredients-and-steps">
-            {% include 'recipes/partials/steps_and_ingredients_for_create_form.html'%}
-        </div>
+        <div id="steps-modal-container"></div>"
         <div class="form-group py-3">
             <input class="btn btn-outline-primary" type="submit" value="Save" />
         </div>
@@ -42,7 +43,7 @@
         </div>
     </form>
 </div>
-<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
+<script type="module" src="{% static 'js/recipes/main.js' %}"></script>
 <!--Modal for Categories and Tags  -->
 {% include 'recipes/partials/categories_and_tags_modal.html' %}
 {% include 'recipes/partials/sub_recipe_modal.html' %}

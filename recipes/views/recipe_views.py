@@ -2,11 +2,14 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.db import transaction, IntegrityError
 
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
 from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm, RecipeIngredientForm, RecipeStepForm
 from ..forms.recipe_filter_forms import RecipeFilterForm
 from utils.helpers.mixins import RegisteredUserAuthRequired
+
+
 
 from ..handlers import recipes_handler
 
@@ -171,7 +174,7 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         context =  super().get_context_data(**kwargs)
         
         image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
-        recipe_context_get = recipes_handler.fetch_recipe_context_data_for_get_request(self.object, self.image_form,image_instance)
+        recipe_context_get = recipes_handler.fetch_recipe_context_data_for_update(self.object, self.image_form,image_instance)
         context.update(recipe_context_get)
         return context
 
@@ -179,26 +182,51 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
-        image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
-        context = recipes_handler.fetch_recipe_context_data_for_post_request(self.object, self.request, self.image_form, image_instance)
-        success = recipes_handler.save_recipe_and_forms(self.object, context)
-        if not success:
-            return self.form_invalid(form)
-
-        recipes_handler.save_categories_and_tags(self.object,
-                                                 self.request.POST.getlist('categories'),
-                                                 self.request.POST.getlist('tags'))
+        image_form = None
+        if self.request.FILES:
+            image_instance = self.model.objects.filter(
+                id=self.object.id).first().images.first() if self.object.images.exists() else None
+            # If there are files in the request, ensure the image form is included
+            image_form = self.image_form(self.request.POST,
+                                            self.request.FILES,
+                                            instance=image_instance)
+            if not image_form.is_valid(): 
+                return self.form_invalid(form)   
         
-        new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
-        current_sub_recipes = set(self.object.sub_recipes.all())
-        if new_recipes_to_add and new_recipes_to_add != current_sub_recipes:
-            success, error_message = recipes_handler.update_recipe_sub_recipe_relationship(
-                self.object, new_recipes_to_add, current_sub_recipes, self.intermidiate_table)
-            if not success:
-                form.add_error(None, error_message)
-                return self.form_invalid(form) 
-        record_id = f'recipe_detail_{self.object.id}'
-        recipes_handler.invalidate_recipe_cache(record_id)
+        try:
+            with transaction.atomic():
+                self.object.save()                      
+                recipes_handler.save_categories_and_tags(self.object,
+                                                        self.request.POST.getlist('categories'),
+                                                        self.request.POST.getlist('tags'))
+                
+                new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
+                current_sub_recipes = set(self.object.sub_recipes.all())
+                if new_recipes_to_add and new_recipes_to_add != current_sub_recipes:
+                    success, error_message = recipes_handler.update_recipe_sub_recipe_relationship(
+                        self.object, new_recipes_to_add, current_sub_recipes, self.intermidiate_table)
+                    if not success:     
+                        raise ValueError(error_message)
+
+                if image_form:
+                    image_instance = image_form.save(commit=False)
+                    if getattr(image_instance, 'recipe', None) is None:
+                        image_instance.recipe = self.object
+                        image_instance.save()
+                record_id = f'recipe_detail_{self.object.id}'
+                transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache(record_id))
+
+        except ValueError as ve:
+            # attach the error to the form and return invalid
+            form.add_error(None, str(ve))
+            return self.form_invalid(form)
+        except IntegrityError as ie:
+            form.add_error(None, "Database error occurred")
+            return self.form_invalid(form)
+        except Exception:
+            # log as needed
+            form.add_error(None, "Failed to save recipe")
+            return self.form_invalid(form) 
         
         return redirect(self.get_success_url())
     
