@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from recipes.models import Recipe
 from recipes.models.recipe_models import Category, Tag
 
 """

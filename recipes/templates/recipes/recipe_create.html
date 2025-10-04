@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block content %}
+<div class="container">
+    <form id="recipe-form" 
+          method="POST" 
+          action="{% url 'recipes:create' %}" 
+          autocomplete="off" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div id="categories-hidden"></div>
+        <div id="tags-hidden"></div>
+        <div id="sub-recipes-hidden"></div>
+        <div id="ingredients-hidden"></div>
+        <div id="steps-hidden"></div>
+        <div class="mb-3">
+            {{ form.title|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+            {{ form.description|as_crispy_field }}
+        </div>
+        <div class="mb-3" id="id_picture">
+            {{ image_form.picture|as_crispy_field }}
+            <img id="image-preview" src="#" alt="Image preview" style="display:none; max-width: 300px; margin-top: 10px;" />
+        </div>
+        <div class="dropdown mb-4">
+            <button id="openCategoriesAndTagsButton" type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoriesAndTagsModal">
+                Add Categories and Tags
+            </button>
+            
+            {% if form.sub_recipes %}
+                <button type="button" class="btn btn-primary mb-3" id="subRecipeButton" data-bs-toggle="modal" data-bs-target="#subRecipesModal">
+                    Select Sub-Recipes
+                </button>
+            {% endif %}
+            {% include 'recipes/partials/recipe_action_buttons.html' with action="Add" %}
+            {% include 'recipes/partials/recipe_steps_action_button.html' with action="Add" %}
+        </div>
+        <div id="ingredients-modal-container"></div>
+        <div id="steps-modal-container"></div>
+        <div class="form-group py-3">
+            <input class="btn btn-outline-primary" type="submit" value="Save" />
+        </div>
+        <div class="border-top pt-3">
+            <a href="{% url 'recipes:home' %}">Cancel</a>
+        </div>
+    </form>
+</div>
+<script type="module" src="{% static 'js/recipes/main.js' %}"></script>
+<!--Modal for Categories and Tags  -->
+{% include 'recipes/html_modals/categories_and_tags_modal.html' %}
+{% include 'recipes/html_modals/sub_recipe_modal.html' %}
+{% endblock %}
+
+

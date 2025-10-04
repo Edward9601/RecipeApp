@@ -3,9 +3,8 @@
 {% block title %} Home Page {% endblock %}
 {% block content %}
 
-<h1>Home Page</h1>
 <section>
-    {% include 'partials/search.html'%}
+    {% include 'recipes/partials/search.html'%}
 </section>
 
 <!-- Filters Dropdown Section -->
@@ -44,7 +43,7 @@
 {% endif %}
 <section>
     <div id="results" class="container">
-        {% include 'partials/recipe_list.html'%}
+        {% include 'recipes/partials/recipe_list.html'%}
     </div>
 </section>
 {% if is_paginated %}
@@ -63,7 +62,7 @@
     </div>
 {% endif %}
 
-<script type="module" src="{% static 'recipes/java_script/main.js' %}"></script>
+<script type="module" src="{% static 'js/recipes/main.js' %}"></script>
 
 {% endblock %}
 

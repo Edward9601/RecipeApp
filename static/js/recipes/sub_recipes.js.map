@@ -1,0 +1,1 @@
+{"version":3,"file":"sub_recipes.js","sourceRoot":"","sources":["../../../src/recipes/sub_recipes.ts"],"names":[],"mappings":"AACA,MAAM,OAAO,gBAAgB;IAIzB;QAFQ,aAAQ,GAA2B,IAAI,CAAC;QAG5C,IAAI,CAAC,QAAQ,GAAG,QAAQ,CAAC,cAAc,CAAC,iBAAiB,CAAoB,CAAC;QAC9E,IAAG,IAAI,CAAC,QAAQ,EAAC,CAAC;QAClB,CAAC;IAEL,CAAC;CACJ"}

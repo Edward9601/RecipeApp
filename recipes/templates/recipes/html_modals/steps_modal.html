@@ -1,0 +1,55 @@
+{% load static %}
+<div class="modal fade modal-xl" id="stepsModal" tabindex="-1" aria-labelledby="stepsModalLabel">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stepsModalLabel">Steps</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="modal-form-elements">
+                    <div class="steps-section mb-4">
+                        <form id="steps-modal-from">
+                            <div id="steps-list" class="form-check">
+                                {{ steps_formset.management_form }}
+                                <div id="steps-formset" class="steps-container">
+                                    {% for steps_form in steps_formset %}
+                                        {{ steps_form.id }}
+                                        <div class="step-card mb-4" style="max-width: 600px; margin: 0 auto;">
+                                            <div class="step-form border p-4 rounded shadow">
+                                                <div class="mb-3">
+                                                    {{ steps_form.order }} 
+                                                    {{ steps_form.description.label_tag }} {{ steps_form.description }}
+                                                </div>
+                                                <div class="text-end">
+                                                    <button type="button" class="remove-button btn btn-secondary">Remove</button>
+                                                </div>
+                                                {{ steps_form.DELETE.as_hidden }}
+                                            </div>
+                                            <div class="hidden-undo" style="display: none;">
+                                                Step removed – <button type="button" class="undo-btn btn-secondary mt-2">Undo</button>
+                                            </div>   
+                                        </div>  
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </form>
+                        <button type="button" id="add-steps-button" data-action="add-steps" data-formset="steps">Add Step</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" 
+                        id="save-steps-button"
+                        class="btn btn-primary" 
+                        data-mode="{% if recipe.id %} update {% else%} create {% endif %}"
+                        data-recipe-id="{{ recipe.id }}"
+                        data-url="{% if recipe.id %}{% url 'recipes:update_recipe_steps' recipe.id %}{% endif %}"
+                        >Save Steps</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div> 
+</div>
+<script type="module" src="{% static 'js/recipes/main.js' %}"></script>

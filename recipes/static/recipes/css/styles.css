@@ -18,7 +18,7 @@
 }
 
 
-.ingredient-container {
+.ingredients-container {
     display: flex;
     flex-wrap: wrap; /* Allows forms to wrap to the next line if space runs out */
     gap: 10px;
@@ -66,4 +66,44 @@
     display: block;
     margin-bottom: 0.25rem;
     font-weight: 400;
+}
+
+/* spinner styles */
+.loader{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(247, 249, 251, 0.7);
+    transition: opacity 0.75s, visibility 0.75s;
+    z-index: 4000;
+}
+
+.loader-hidden{
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Prevents interaction when hidden */
+}
+
+.loader::after {
+    content: "";
+    width: 75px;
+    height: 75px;
+    border: 15px solid #dddddd;
+    border-top-color: #3498db;
+    border-radius: 50%;
+    animation: loading 0.75s ease infinite;
+}
+
+@keyframes loading {
+    from{
+        transform: rotate(0turn);
+    }
+    to{
+        transform: rotate(1turn);
+    }
 }

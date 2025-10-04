@@ -36,7 +36,7 @@
             {% block content %}{% endblock %}
         </div>
     </div>
-
+    <div class="loader loader-hidden"></div>
     <footer class="footer">
         <div class="container">
             <div class="row">
@@ -68,6 +68,7 @@
             </div>
         </div>
     </footer>
+{% include 'partials/unsaved_changes_modal.html'%}
 {% include 'partials/js.html'%}
 </body>
 </html>
