@@ -28,6 +28,20 @@
                                             </div>   
                                         </div>  
                                     {% endfor %}
+                                    <div id="empty-form" style="display:none;">
+                                        <div class="ingredient-card">
+                                            <div class="ingredient-form border p-4 rounded shadow">
+                                                {{ ingredients_formset.empty_form.name.label_tag }} {{ ingredients_formset.empty_form.name }}
+                                                {{ ingredients_formset.empty_form.quantity.label_tag }} {{ ingredients_formset.empty_form.quantity }}
+                                                {{ ingredients_formset.empty_form.measurement.label_tag }} {{ ingredients_formset.empty_form.measurement }}
+                                                <button type="button" class="remove-button btn btn-secondary mt-2">Remove</button>
+                                                {{ ingredients_formset.empty_form.DELETE.as_hidden }}
+                                            </div>
+                                            <div class="hidden-undo" style="display:none;">
+                                                Ingredient removed – <button type="button" class="undo-btn btn-secondary mt-2">Undo</button>
+                                            </div>   
+                                        </div>
+                                    </div>
                                 </div>
                                 
                             </div>

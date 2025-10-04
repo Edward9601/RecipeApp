@@ -169,49 +169,42 @@ export class StepsManager extends BaseFormManager {
         const mainForm = this.htmlModal;
         let formsetDiv = mainForm.querySelector('#steps-formset');
         let totalFormsInput = mainForm.querySelector('#id_steps-TOTAL_FORMS');
-        if (!formsetDiv || !totalFormsInput) {
-            console.error('Formset div or TOTAL_FORMS input not found.');
+        let emptyForm = mainForm.querySelector('#empty-step-form');
+        if (!formsetDiv || !totalFormsInput || !emptyForm) {
+            console.error('Required elements not found.');
             return;
         }
         let totalForms = parseInt(totalFormsInput.value, 10);
-        const stepsCard = mainForm.querySelector('.step-card');
-        if (!stepsCard) {
-            console.error('Steps card not found.');
-            return;
-        }
         // Deep clone to maintain exact structure
-        const newStepsCard = stepsCard.cloneNode(true);
+        const newStepForm = emptyForm.cloneNode(true);
+        newStepForm.style.display = 'block';
         // Update form IDs and names
-        const formElements = newStepsCard.querySelectorAll('input, textarea, label');
+        const formElements = newStepForm.querySelectorAll('input, textarea, label');
         formElements.forEach((element) => {
-            var _a;
             if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-                // Clear any existing values first
-                element.value = '';
                 // Update names and IDs
                 if (element.name) {
-                    element.name = element.name.replace(/steps-\d+-/, `steps-${totalForms}-`);
+                    element.name = element.name.replace(/__prefix__/g, totalForms.toString());
+                    if (element.name.includes('order')) {
+                        element.value = (totalForms + 1).toString(); // Set order to current count + 1
+                    }
                 }
                 if (element.id) {
-                    element.id = element.id.replace(/id_steps-\d+-/, `id_steps-${totalForms}-`);
-                }
-                // Set order value if it's the order input
-                if ((_a = element.name) === null || _a === void 0 ? void 0 : _a.includes('order')) {
-                    element.value = (totalForms + 1).toString();
+                    element.id = element.id.replace(/__prefix__/g, totalForms.toString());
                 }
             }
-            // Update label's 'for' attribute if present
+            // Update label's 'for' attribute
             if (element instanceof HTMLLabelElement && element.htmlFor) {
-                element.htmlFor = element.htmlFor.replace(/id_steps-\d+-/, `id_steps-${totalForms}-`);
+                element.htmlFor = element.htmlFor.replace(/__prefix__/g, totalForms.toString());
             }
         });
         // Reset the undo section display
-        const undoSection = newStepsCard.querySelector('.hidden-undo');
+        const undoSection = newStepForm.querySelector('.hidden-undo');
         if (undoSection instanceof HTMLElement) {
             undoSection.style.display = 'none';
         }
         // Add to form and update total
-        formsetDiv.appendChild(newStepsCard);
+        formsetDiv.appendChild(newStepForm);
         totalFormsInput.value = (totalForms + 1).toString();
     }
     hasMeaningfulChanges(currentFormData, originalFormData) {
