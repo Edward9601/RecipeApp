@@ -1,5 +1,5 @@
 interface BaseRecipeItem{
-    id: number;
+    id: number | undefined; // Undefined for new items
     isDeleted: boolean;
 }
 
@@ -25,4 +25,5 @@ export interface FormManagerConfig{
     mainFormId: string;
     openModalButtonId: string;
     htmlDetailPageId: string
+    htmxTargetId: string;
 }

@@ -286,7 +286,7 @@ class IngredientsPartialView(RegisteredUserAuthRequired, View):
 
     model = Recipe
     form_class = RecipeIngredientForm
-    template_name = 'recipes/partials/ingredients_modal.html'
+    template_name = 'recipes/html_modals/ingredients_modal.html'
 
     def get(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
@@ -377,7 +377,7 @@ class StepsPartialView(RegisteredUserAuthRequired, View):
 
     model = Recipe
     form_class = RecipeStepForm
-    template_name = 'recipes/partials/steps_modal.html'
+    template_name = 'recipes/html_modals/steps_modal.html'
 
     def get(self, request, *args, **kwargs):
         pk = kwargs.get('pk')

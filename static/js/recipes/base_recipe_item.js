@@ -1,3 +1,12 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { UnsavedChangesModalManager } from "../shared/unsaved_changes_modal_manager.js";
 export class BaseFormManager {
     constructor(config) {
@@ -8,6 +17,7 @@ export class BaseFormManager {
         this.reloadItems = false;
         this.originalFormData = null;
         this.detailPage = null;
+        this.isBound = false;
         this.config = config;
         this.htmlModal = document.getElementById(config.htmlModalId);
         if (this.htmlModal) {
@@ -15,10 +25,54 @@ export class BaseFormManager {
             this.addButton = document.getElementById(config.addButtonId);
             this.saveButton = document.getElementById(config.saveButtonId);
             this.detailPage = document.querySelector(config.htmlDetailPageId);
+            this.mainForm = document.getElementById(config.mainFormId);
             this.isUpdateMode = ((_b = (_a = this.saveButton) === null || _a === void 0 ? void 0 : _a.getAttribute('data-mode')) === null || _b === void 0 ? void 0 : _b.match(/update/i)) ? true : false;
             this.originalFormData = this.getFormData(this.htmlForm);
-            this.setupHtmxInterception(this.htmlModal);
+            if (!this.isBound) {
+                this.templateInitialize();
+                this.isBound = true;
+            }
         }
+    }
+    templateInitialize() {
+        this.setupHtmxInterception(this.htmlModal);
+        this.setUpButtonsDelegationEventListeners();
+        this.setUpModalCloseProtection(this.htmlModal, this.htmlForm);
+    }
+    setupHtmxInterception(htmlModal) {
+        // Find the specific button that opens modal
+        const openModalButton = document.getElementById(this.config.openModalButtonId);
+        if (openModalButton) {
+            openModalButton.addEventListener('htmx:beforeRequest', (event) => {
+                // Only prevent the request for initial modal opening
+                const target = event.target;
+                if (!this.reloadItems && !target.classList.contains('has-validation-errors')) {
+                    event.preventDefault();
+                    const modal = new window.bootstrap.Modal(htmlModal);
+                    modal.show();
+                }
+            });
+        }
+    }
+    setUpModalCloseProtection(htmlModal, htmlForm) {
+        return __awaiter(this, void 0, void 0, function* () {
+            htmlModal.addEventListener('hide.bs.modal', (event) => {
+                this.checkForChanges(htmlForm);
+                if (this.hasUnsavedChanges) {
+                    event.preventDefault();
+                    this.unsavedChangesManager.show(() => __awaiter(this, void 0, void 0, function* () {
+                        const apiUrl = this.saveButton.dataset.url;
+                        this.hasUnsavedChanges = false;
+                        yield this.handleUpdateSave(apiUrl);
+                        this.closeModal(this.htmlModal);
+                    }), () => {
+                        this.reloadItems = true; // indicating to fetch data again on modal open
+                        this.hasUnsavedChanges = false;
+                        this.closeModal(this.htmlModal);
+                    });
+                }
+            });
+        });
     }
     getFormData(htmlForm) {
         return new FormData(htmlForm);
@@ -30,20 +84,6 @@ export class BaseFormManager {
         }
         console.error('CSRF token not found in cookies');
         return null;
-    }
-    setupHtmxInterception(htmlModal) {
-        // Find the specific button that opens modal
-        const openModalButton = document.getElementById(this.config.openModalButtonId);
-        if (openModalButton) {
-            openModalButton.addEventListener('htmx:beforeRequest', (event) => {
-                // Prevent HTMX from sending the request
-                if (!this.reloadItems) {
-                    event.preventDefault();
-                    const modal = new window.bootstrap.Modal(htmlModal);
-                    modal.show();
-                }
-            });
-        }
     }
     collectFormData() {
         const formData = new FormData(this.htmlForm);
@@ -114,91 +154,32 @@ export class BaseFormManager {
                 overlay.remove();
         });
     }
-    createHiddenInput(container, name, value) {
+    createHiddenInput(container, name, value, inputType) {
         const input = document.createElement('input');
-        input.type = 'hidden';
+        input.type = inputType;
         input.name = name;
         input.value = value;
         container.appendChild(input);
     }
-    undoRemoveItemForm(button) {
-        const itemCard = button.closest(`.${this.config.fieldPrefix}-card`);
-        if (!itemCard)
-            return;
-        // Show the ingredient form again
-        const itemForm = itemCard.querySelector(`.${this.config.fieldPrefix}-form`);
-        if (itemForm && itemForm.hidden) {
-            itemForm.hidden = false;
-        }
-        // Hide the undo section
-        const hiddenUndo = itemCard.querySelector('.hidden-undo');
-        if (hiddenUndo) {
-            hiddenUndo.style.display = 'none';
-        }
-        // Uncheck the DELETE checkbox
-        const deleteInput = itemCard.querySelector('input[name*="-DELETE"]');
-        if (deleteInput && deleteInput.checked) {
-            deleteInput.checked = false;
-        }
-    }
-    removeItemForm(button) {
-        const itemCard = button.closest(`.${this.config.fieldPrefix}-card`);
-        if (!itemCard)
-            return;
-        let itemForm = itemCard.querySelector(`.${this.config.fieldPrefix}-form`);
-        if (!itemForm)
-            return;
-        itemForm.hidden = true;
-        const undoButton = itemCard.querySelector('.hidden-undo');
-        if (undoButton) {
-            // Show the undo button
-            undoButton.style.display = 'block';
-        }
-        // Find the hidden DELETE checkbox
-        const deleteInput = itemForm.querySelector('input[name*="-DELETE"]');
-        if (deleteInput) {
-            // Mark for deletion and hide the form
-            deleteInput.value = 'on';
-        }
-    }
-    setUpButtonsDelegationEventListeners(elementId) {
-        const itemList = this.htmlModal.querySelector(elementId);
-        if (itemList) {
-            itemList.addEventListener('click', (event) => {
-                const target = event.target;
-                if (target.matches('.remove-button')) {
-                    event.preventDefault();
-                    this.removeItemForm(target);
-                }
-                if (target.matches('.undo-btn')) {
-                    event.preventDefault();
-                    this.undoRemoveItemForm(target);
-                }
-            });
-        }
-        else {
-            console.error(`${this.config.fieldPrefix}s list not found.`);
-        }
+    createHiddenTextArea(container, name, value) {
+        const textArea = document.createElement('textarea');
+        textArea.name = name;
+        textArea.value = value;
+        textArea.style.display = 'none';
+        container.appendChild(textArea);
     }
     SetUpModalEventListener() {
-        if (this.addButton) {
-            this.addButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                this.addItemToForm();
-            });
-        }
-        if (this.saveButton) {
-            this.saveButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                if (this.isUpdateMode) {
-                    const apiUrl = this.saveButton.dataset.url;
-                    this.handleUpdateSave(apiUrl);
+        document.body.addEventListener('htmx:afterSwap', (event) => {
+            // Cast to CustomEvent with detail property
+            const customEvent = event;
+            if (customEvent.detail && customEvent.detail.target.id === this.config.htmxTargetId) {
+                const modalEl = document.getElementById(this.config.htmlModalId);
+                if (modalEl) {
+                    const modal = new window.bootstrap.Modal(modalEl);
+                    modal.show();
                 }
-                else {
-                    this.handleCreateSave();
-                }
-            });
-        }
+            }
+        });
     }
 }
 //# sourceMappingURL=base_recipe_item.js.map

@@ -15,7 +15,8 @@ const ingredientsConfig: FormManagerConfig = {
     removeButtonId: ".remove-button",
     mainFormId: "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
-    openModalButtonId: "openIngredientsButton"
+    openModalButtonId: "openIngredientsButton",
+    htmxTargetId: "ingredients-modal-container"
 
 }
 
@@ -29,7 +30,8 @@ const stepsConfig: FormManagerConfig = {
     removeButtonId: ".remove-button",
     mainFormId: "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
-    openModalButtonId: "openStepsButton"
+    openModalButtonId: "openStepsButton",
+    htmxTargetId: "steps-modal-container"
 
 }
 

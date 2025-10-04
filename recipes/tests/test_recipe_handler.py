@@ -83,22 +83,22 @@ class RecipeHandlerTestCase(BaseTestCase):
         # Act
         context = recipes_handler.fetch_recipe_context_data_for_post_request(self.recipe, request, RecipeImageForm, self.image)
         # Assert
-        self.assertIsNotNone(context.get('ingredient_formset'))
-        self.assertIsNotNone(context.get('step_formset'))
+        self.assertIsNotNone(context.get('ingredients_formset'))
+        self.assertIsNotNone(context.get('steps_formset'))
         self.assertIsNotNone(context.get('image_form'))
         self.assertIsInstance(context.get('image_form'), RecipeImageForm)
         self.assertEqual(context.get('image_form').instance, self.image)
-        self.assertEqual(context.get('ingredient_formset').instance, self.recipe)
-        self.assertEqual(context.get('step_formset').instance, self.recipe)
-        self.assertEqual(context.get('ingredient_formset').prefix, 'ingredients')
-        self.assertEqual(context.get('step_formset').prefix, 'steps')
-        self.assertEqual(context.get('ingredient_formset').queryset.model, RecipeIngredient)
-        self.assertEqual(context.get('step_formset').queryset.model, RecipeStep)
-        self.assertTrue(context.get('ingredient_formset').is_valid())
-        self.assertTrue(context.get('step_formset').is_valid())
+        self.assertEqual(context.get('ingredients_formset').instance, self.recipe)
+        self.assertEqual(context.get('steps_formset').instance, self.recipe)
+        self.assertEqual(context.get('ingredients_formset').prefix, 'ingredients')
+        self.assertEqual(context.get('steps_formset').prefix, 'steps')
+        self.assertEqual(context.get('ingredients_formset').queryset.model, RecipeIngredient)
+        self.assertEqual(context.get('steps_formset').queryset.model, RecipeStep)
+        self.assertTrue(context.get('ingredients_formset').is_valid())
+        self.assertTrue(context.get('steps_formset').is_valid())
         self.assertTrue(context.get('image_form').is_valid())
-        self.assertTrue(context.get('ingredient_formset').has_changed())
-        self.assertTrue(context.get('step_formset').has_changed())
+        self.assertTrue(context.get('ingredients_formset').has_changed())
+        self.assertTrue(context.get('steps_formset').has_changed())
         self.assertTrue(context.get('image_form').has_changed())
 
 
@@ -110,8 +110,8 @@ class RecipeHandlerTestCase(BaseTestCase):
         context = recipes_handler.fetch_recipe_context_data_for_get_request(recipe, RecipeImageForm, None)
         categories = context.get('categories')
         tags = context.get('tags')
-        ingredient_formset = context.get('ingredient_formset')
-        step_formset = context.get('step_formset')
+        ingredient_formset = context.get('ingredients_formset')
+        step_formset = context.get('steps_formset')
         image_form = context.get('image_form')
         form = context.get('form')
 
@@ -143,18 +143,18 @@ class RecipeHandlerTestCase(BaseTestCase):
         # Act
         context = recipes_handler.fetch_recipe_context_data_for_get_request(recipe, RecipeImageForm, image_instance)
         # Assert
-        self.assertIsNotNone(context.get('ingredient_formset'))
-        self.assertIsNotNone(context.get('step_formset'))
+        self.assertIsNotNone(context.get('ingredients_formset'))
+        self.assertIsNotNone(context.get('steps_formset'))
         self.assertIsNotNone(context.get('image_form'))
         self.assertIsInstance(context.get('image_form'), RecipeImageForm)
         self.assertEqual(context.get('image_form').instance, image_instance)
-        self.assertEqual(context.get('ingredient_formset').instance, recipe)
-        self.assertEqual(context.get('step_formset').instance, recipe)  
+        self.assertEqual(context.get('ingredients_formset').instance, recipe)
+        self.assertEqual(context.get('steps_formset').instance, recipe)  
         self.assertEqual(context.get('form').instance, recipe)
-        self.assertEqual(context.get('ingredient_formset').prefix, 'ingredients')
-        self.assertEqual(context.get('step_formset').prefix, 'steps')
-        self.assertEqual(context.get('ingredient_formset').queryset.model, RecipeIngredient)
-        self.assertEqual(context.get('step_formset').queryset.model, RecipeStep)
+        self.assertEqual(context.get('ingredients_formset').prefix, 'ingredients')
+        self.assertEqual(context.get('steps_formset').prefix, 'steps')
+        self.assertEqual(context.get('ingredients_formset').queryset.model, RecipeIngredient)
+        self.assertEqual(context.get('steps_formset').queryset.model, RecipeStep)
         self.assertEqual(context.get('categories').count(), Category.objects.count())
         self.assertEqual(context.get('tags').count(), Tag.objects.count())
         self.assertEqual(context.get('categories').first(), self.category)
@@ -169,8 +169,8 @@ class RecipeHandlerTestCase(BaseTestCase):
        
         
         # Act
-        ingredient_formset = context['ingredient_formset']
-        step_formset = context['step_formset']
+        ingredient_formset = context['ingredients_formset']
+        step_formset = context['steps_formset']
         ingredient_formset.is_valid()
         step_formset.is_valid()
         forms = [
@@ -211,8 +211,8 @@ class RecipeHandlerTestCase(BaseTestCase):
         request = RequestFactory().post('test/', data=data, formats='multipart')
         context = recipes_handler.fetch_recipe_context_data_for_post_request(recipe, request, RecipeImageForm, self.image)
 
-        ingredient_formset = context['ingredient_formset']
-        step_formset = context['step_formset']
+        ingredient_formset = context['ingredients_formset']
+        step_formset = context['steps_formset']
 
         forms_list = [ingredient_formset, step_formset]
 
@@ -232,8 +232,8 @@ class RecipeHandlerTestCase(BaseTestCase):
         request = RequestFactory().post('test/', data=data, formats='multipart')
         context = recipes_handler.fetch_recipe_context_data_for_post_request(recipe, request, RecipeImageForm, self.image)
 
-        ingredient_formset = context['ingredient_formset']
-        step_formset = context['step_formset']
+        ingredient_formset = context['ingredients_formset']
+        step_formset = context['steps_formset']
 
         forms_list = [ingredient_formset, step_formset]
 

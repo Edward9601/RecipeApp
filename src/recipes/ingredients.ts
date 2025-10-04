@@ -5,32 +5,75 @@ import { FormManagerConfig } from './interfaces/recipe_items_interfaces.js'
 import { RecipeManager } from "./recipes.js";
 
 export class IngredientsManager extends BaseFormManager<Ingredient> {
-    private reloadIngredients: boolean = false;
 
     constructor(config: FormManagerConfig) {
         super(config);
-        this.isUpdateMode = this.saveButton?.getAttribute('data-mode')?.match(/update/i) ? true : false;
-
-        
-        this.SetUpModalEventListener();
-        this.setUpModalCloseProtection(this.htmlModal, this.htmlForm); 
-        
+        this.SetUpActionButtonsModalEventListener();
     }
 
-    protected override SetUpModalEventListener(){
-        document.body.addEventListener('htmx:afterSwap', (event: Event) => {
-            // Cast to CustomEvent with detail property
-            const customEvent = event as CustomEvent<{ target: HTMLElement }>;
-            if (customEvent.detail && customEvent.detail.target.id === 'ingredients-modal-container') {
-                const modalEl = document.getElementById('ingredientsModal') as HTMLElement;
-                if (modalEl) {
-                    const modal = new (window as any).bootstrap.Modal(modalEl);
-                    modal.show();
-                }}
+    private SetUpActionButtonsModalEventListener(){
+        if (this.addButton) {
+            this.addButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                this.addItemToForm();
             });
-        super.SetUpModalEventListener();
-        // Set up event delegation for remove buttons
-        super.setUpButtonsDelegationEventListeners('#ingredients-list');
+        }
+        
+        if (this.saveButton) {
+            this.saveButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (this.isUpdateMode) {
+                    const apiUrl = this.saveButton.dataset.url!;
+                    this.handleUpdateSave(apiUrl);
+                    this.closeModal(this.htmlModal);
+                } else {
+                    this.handleCreateSave();
+                    this.closeModal(this.htmlModal);
+                }
+            });
+        }
+    }
+
+    protected override setUpButtonsDelegationEventListeners(): void {
+        const itemList = this.htmlModal.querySelector('#ingredients-list') as HTMLElement;
+        if (itemList) {
+            itemList.addEventListener('click', (event) => {
+                const target = event.target as HTMLElement;
+                if (target.matches('.remove-button')) {
+                    event.preventDefault();
+                    this.removeItemForm(target);
+                }
+                if(target.matches('.undo-btn')){
+                    event.preventDefault();
+                    this.undoRemoveItemForm(target);
+                }
+            });
+        } else {
+            console.error(`${this.config.fieldPrefix}s list not found.`);
+        }
+    }
+
+    private undoRemoveItemForm(button: HTMLElement): void {
+        const itemCard = button.closest(`.${this.config.fieldPrefix}-card`) as HTMLElement;
+        if (!itemCard) return;
+        
+        // Show the ingredient form again
+        const itemForm = itemCard.querySelector(`.${this.config.fieldPrefix}-form`) as HTMLElement;
+        if (itemForm && itemForm.hidden) {
+            itemForm.hidden = false;
+        }
+        
+        // Hide the undo section
+        const hiddenUndo = itemCard.querySelector('.hidden-undo') as HTMLElement;
+        if (hiddenUndo) {
+            hiddenUndo.style.display = 'none';
+        }
+        
+        // Uncheck the DELETE checkbox
+        const deleteInput = itemCard.querySelector('input[name*="-DELETE"]') as HTMLInputElement;
+        if (deleteInput && deleteInput.checked) {
+            deleteInput.checked = false;
+        }
     }
 
     
@@ -71,23 +114,24 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
         return ingredients;
     }
 
-    private async setUpModalCloseProtection(ingredientModal: HTMLElement, ingredientsForm: HTMLFormElement): Promise<void> {
-        ingredientModal.addEventListener('hide.bs.modal', (event) => {
-            super.checkForChanges(ingredientsForm);
-            if(this.hasUnsavedChanges){
-                event.preventDefault();
-                this.unsavedChangesManager.show(async ()=>{
-                    const apiUrl = this.saveButton.dataset.url!;
-                    this.hasUnsavedChanges = false;
-                    await this.handleUpdateSave(apiUrl);
-                    super.closeModal(this.htmlModal);
-                },()=>{
-                    this.reloadItems = true; // indicating to fetch data again on modal open
-                    this.hasUnsavedChanges = false;
-                    super.closeModal(this.htmlModal);
-                }); 
-            }
-        })
+    protected removeItemForm(button: HTMLElement): void {
+        const itemCard = button.closest('.ingredient-card') as HTMLElement;
+        if (!itemCard) return;
+        let itemForm = itemCard.querySelector('.ingredient-form') as HTMLElement;
+        if (!itemForm) return;
+
+        itemForm.hidden = true;
+        const undoButton = itemCard.querySelector('.hidden-undo') as HTMLElement;
+        if (undoButton) {
+            // Show the undo button
+            undoButton.style.display = 'block';
+        }
+        // Find the hidden DELETE checkbox
+        const deleteInput = itemForm.querySelector('input[name*="-DELETE"]') as HTMLInputElement;
+        if (deleteInput) {
+            // Mark for deletion and hide the form
+            deleteInput.value = 'on';
+        }
     }
 
     async handleUpdateSave(apiUrl: string): Promise<void>{
@@ -131,7 +175,7 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
             const errorMessage = `Error saving ingredients: ${error instanceof Error ? error.message : 'Unknown error'}`;
             this.showMessage(errorMessage);
         }
-        this.reloadIngredients = true; // indicating to fetch data again on modal open
+        this.reloadItems = true; // indicating to fetch data again on modal open
         super.hideLoadingState();
     }
 
@@ -146,7 +190,7 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
             const li = document.createElement('li');
             const quantity = ingredient.quantity ? `${ingredient.quantity}` : '';
             const measurement = ingredient.measurement ? `${ingredient.measurement}` : '';
-            li.textContent = `${ingredient.name} ${quantity} ${measurement}`
+            li.textContent = `${quantity} ${measurement} ${ingredient.name}`
 
             // Hidden input to store ingredient ID for potential future use
             const deleteInput = document.createElement('input');
@@ -198,10 +242,10 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
 
                 if (nameInput?.value) {
                     // Create hidden inputs for each ingredient field
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-name`, nameInput.value);
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-quantity`, quantityInput.value || '');
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-measurement`, measurementInput?.value || '');
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-DELETE`, 'false');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-name`, nameInput.value, 'hidden');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-quantity`, quantityInput.value || '', 'hidden');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-measurement`, measurementInput?.value || '', 'hidden');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-DELETE`, 'false', 'hidden');
                     
                     ingredientIndex++;
                 }
@@ -209,10 +253,10 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
         });
 
         // Add management form hidden inputs
-        super.createHiddenInput(ingredientsContainer, 'ingredients-TOTAL_FORMS', ingredientIndex.toString());
-        super.createHiddenInput(ingredientsContainer, 'ingredients-INITIAL_FORMS', '0');
-        super.createHiddenInput(ingredientsContainer, 'ingredients-MIN_NUM_FORMS', '0');
-        super.createHiddenInput(ingredientsContainer, 'ingredients-MAX_NUM_FORMS', '1000');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-TOTAL_FORMS', ingredientIndex.toString(), 'hidden');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-INITIAL_FORMS', '0', 'hidden');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-MIN_NUM_FORMS', '0', 'hidden');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-MAX_NUM_FORMS', '1000', 'hidden');
 
         return ingredientIndex;
     }

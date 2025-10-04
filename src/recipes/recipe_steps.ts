@@ -4,51 +4,98 @@ import { FormManagerConfig } from './interfaces/recipe_items_interfaces.js'
 
 export class StepsManager  extends BaseFormManager<Step>{
 
-    private reloadSteps: boolean = false;
-
     constructor(config: FormManagerConfig) {
         super(config)
-        this.isUpdateMode = this.saveButton.getAttribute('data-mode')?.match(/update/i) ? true : false;
-        this.SetUpModalEventListener();
-        this.setUpModalCloseProtection(this.htmlModal, this.htmlForm);
-        
+
+        this.SetUpActionButtonsModalEventListener();
     }
 
 
-    protected override SetUpModalEventListener(){
-        document.body.addEventListener('htmx:afterSwap', (event: Event) => {
-            // Cast to CustomEvent with detail property
-            const customEvent = event as CustomEvent<{ target: HTMLElement }>;
-            if (customEvent.detail && customEvent.detail.target.id === 'steps-modal-container') {
-                const modalEl = document.getElementById('stepsModal') as HTMLElement;
-                if (modalEl) {
-                    const modal = new (window as any).bootstrap.Modal(modalEl);
-                    modal.show();
-                    this.originalFormData = this.getFormData(this.htmlForm);
-                }}
-            });
-        super.SetUpModalEventListener();
-        // Set up event delegation for remove buttons
-        super.setUpButtonsDelegationEventListeners('#steps-list');
-    }
-
-    private async setUpModalCloseProtection(ingredientModal: HTMLElement, ingredientsForm: HTMLFormElement): Promise<void> {
-        ingredientModal.addEventListener('hide.bs.modal', (event) => {
-            super.checkForChanges(ingredientsForm);
-            if(this.hasUnsavedChanges){
+    private SetUpActionButtonsModalEventListener(){
+        if (this.addButton) {
+            this.addButton.addEventListener('click', (event) => {
                 event.preventDefault();
-                this.unsavedChangesManager.show(async ()=>{
+                this.addItemToForm();
+            });
+        }
+        
+        if (this.saveButton) {
+            this.saveButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (this.isUpdateMode) {
                     const apiUrl = this.saveButton.dataset.url!;
-                    this.hasUnsavedChanges = false;
-                    await this.handleUpdateSave(apiUrl);
-                    super.closeModal(this.htmlModal);
-                },()=>{
-                    this.reloadItems = true; // indicating to fetch data again on modal open
-                    this.hasUnsavedChanges = false;
-                    super.closeModal(this.htmlModal);
-                }); 
-            }
-        })
+                    this.handleUpdateSave(apiUrl);
+                    this.closeModal(this.htmlModal);
+                } else {
+                    this.handleCreateSave();
+                    this.closeModal(this.htmlModal);
+                }
+            });
+        }
+    }
+
+    protected setUpButtonsDelegationEventListeners(): void {
+        const itemList = this.htmlModal.querySelector('#steps-list') as HTMLElement;
+        if (itemList) {
+            itemList.addEventListener('click', (event) => {
+                const target = event.target as HTMLElement;
+                if (target.matches('.remove-button')) {
+                    event.preventDefault();
+                    this.removeItemForm(target);
+                }
+                if(target.matches('.undo-btn')){
+                    event.preventDefault();
+                    this.undoRemoveItemForm(target);
+                }
+            });
+        } else {
+            console.error(`${this.config.fieldPrefix}s list not found.`);
+        }
+    }
+
+    protected removeItemForm(button: HTMLElement): void {
+        const itemCard = button.closest('.step-card') as HTMLElement;
+        if (!itemCard) return;
+        let itemForm = itemCard.querySelector('.step-form') as HTMLElement;
+        if (!itemForm) return;
+
+        itemForm.hidden = true;
+        const undoButton = itemCard.querySelector('.hidden-undo') as HTMLElement;
+        if (undoButton) {
+            // Show the undo button
+            undoButton.style.display = 'block';
+        }
+        // Find the hidden DELETE checkbox
+        const deleteInput = itemForm.querySelector('input[name*="-DELETE"]') as HTMLInputElement;
+        if (deleteInput) {
+            // Mark for deletion and hide the form
+            deleteInput.value = 'on';
+        }
+    }
+
+    
+
+    private undoRemoveItemForm(button: HTMLElement): void {
+        const itemCard = button.closest(`.${this.config.fieldPrefix}-card`) as HTMLElement;
+        if (!itemCard) return;
+        
+        // Show the step form again
+        const itemForm = itemCard.querySelector(`.${this.config.fieldPrefix}-form`) as HTMLElement;
+        if (itemForm && itemForm.hidden) {
+            itemForm.hidden = false;
+        }
+        
+        // Hide the undo section
+        const hiddenUndo = itemCard.querySelector('.hidden-undo') as HTMLElement;
+        if (hiddenUndo) {
+            hiddenUndo.style.display = 'none';
+        }
+        
+        // Uncheck the DELETE checkbox
+        const deleteInput = itemCard.querySelector('input[name*="-DELETE"]') as HTMLInputElement;
+        if (deleteInput && deleteInput.checked) {
+            deleteInput.checked = false;
+        }
     }
 
 
@@ -93,7 +140,7 @@ export class StepsManager  extends BaseFormManager<Step>{
             const errorMessage = `Error saving steps: ${error instanceof Error ? error.message : 'Unknown error'}`;
             this.showMessage(errorMessage);
         }
-        this.reloadSteps = true; // indicating to fetch data again on modal open
+        this.reloadItems = true; // indicating to fetch data again on modal open
         this.hideLoadingState();
     }
 
@@ -136,67 +183,53 @@ export class StepsManager  extends BaseFormManager<Step>{
         }
         let totalForms = parseInt(totalFormsInput.value, 10);
 
-        const stepsForm = mainForm.querySelector<HTMLElement>('.step-form');
-        if (!stepsForm) {
-            console.error('Empty form template not found.');
-            return;
-        }
         const stepsCard = mainForm.querySelector<HTMLElement>('.step-card');
         if (!stepsCard) {
             console.error('Steps card not found.');
             return;
         }
 
+        // Deep clone to maintain exact structure
         const newStepsCard = stepsCard.cloneNode(true) as HTMLElement;
-        const newStepsFrom = newStepsCard.querySelector<HTMLElement>('.step-form');
-        if (!newStepsFrom) {
-            console.error('Cloned form not found.');
-            return;
-        }
 
-        const inputs = newStepsCard.querySelectorAll('input, textarea, select, label');
-        inputs.forEach((element: Element) => {
-            if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
+        // Update form IDs and names
+        const formElements = newStepsCard.querySelectorAll('input, textarea, label');
+        formElements.forEach((element: Element) => {
+            if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+                // Clear any existing values first
                 element.value = '';
-        }});
-
-        const formIndex = totalForms;
-
-        inputs.forEach((element: Element) => {
-            if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
-                const name = element.name;
-                if (name) {
-                    element.name = name.replace(/steps-(\d+)-/, `steps-${formIndex}-`);
+                
+                // Update names and IDs
+                if (element.name) {
+                    element.name = element.name.replace(/steps-\d+-/, `steps-${totalForms}-`);
                 }
-                const id = element.id;
-                if (id) {
-                    element.id = id.replace(/id_steps-(\d+)-/, `id_steps-${formIndex}-`);
+                if (element.id) {
+                    element.id = element.id.replace(/id_steps-\d+-/, `id_steps-${totalForms}-`);
                 }
+
+                // Set order value if it's the order input
+                if (element.name?.includes('order')) {
+                    element.value = (totalForms + 1).toString();
+                }
+            }
+            // Update label's 'for' attribute if present
+            if (element instanceof HTMLLabelElement && element.htmlFor) {
+                element.htmlFor = element.htmlFor.replace(/id_steps-\d+-/, `id_steps-${totalForms}-`);
             }
         });
 
-        const orderInput = newStepsCard.querySelector('input[name*="order"]') as HTMLInputElement;
-
-        if(orderInput){
-            orderInput.value = (formIndex + 1).toString();
+        // Reset the undo section display
+        const undoSection = newStepsCard.querySelector('.hidden-undo');
+        if (undoSection instanceof HTMLElement) {
+            undoSection.style.display = 'none';
         }
-        // Hide the undo section for new cards
-        const hiddenUndo = newStepsCard.querySelector('.hidden-undo') as HTMLElement;
-        if (hiddenUndo) {
-            hiddenUndo.style.display = 'none';
-        }
-        // Create hidden DELETE checkbox for the new form
-        const hiddenDeleteDiv = document.createElement('div');
-        hiddenDeleteDiv.className = 'hidden-delete';
-        hiddenDeleteDiv.style.display = 'none';
-        hiddenDeleteDiv.innerHTML = `
-            <input type="checkbox" name="steps-${formIndex}-DELETE" id="id_steps-${formIndex}-DELETE">`;
 
+        // Add to form and update total
         formsetDiv.appendChild(newStepsCard);
-        formsetDiv.appendChild(hiddenDeleteDiv);
         totalFormsInput.value = (totalForms + 1).toString();
-
     }
+
+
     hasMeaningfulChanges(currentFormData: FormData, originalFormData: FormData): boolean {
         const currentSteps = this.extractNonEmptySteps(currentFormData);
         const originalSteps = this.extractNonEmptySteps(originalFormData);
@@ -220,24 +253,76 @@ export class StepsManager  extends BaseFormManager<Step>{
             const description = formData.get(`steps-${index}-description`) as string;
             // Only include steps with a desctiption (non-empty)
             if (description && description.trim() !== '') {
-                const order = parseInt(formData.get(`steps-${index}-order`) as string, 10) || undefined;
-                const id = parseInt(formData.get(`steps-${index}-id`) as string, 10) || undefined;
-                if(order && id){
-                    const isDeleted = formData.get(`steps-${index}-DELETE`) === 'on';
-                    steps.push({
-                        id: id,
-                        description: description.trim(),
-                        order: order,
-                        isDeleted: isDeleted
-                    });
-                }
+                const order = parseInt(formData.get(`steps-${index}-order`) as string, 10);
+                const id = formData.get(`steps-${index}-id`) as string;
+
+                const isDeleted = formData.get(`steps-${index}-DELETE`) === 'on';
+                steps.push({
+                    id: id ? parseInt(id, 10) : undefined,
+                    description: description.trim(),
+                    order: order,
+                    isDeleted: isDeleted
+                });
             }
         });
-        
         return steps;
     }
     
     handleCreateSave(): void{
+        // For create mode: saving to hidden form fields
+        console.log('Handling create save - saving to hidden form');
+        
+        const saveStepCount = this.saveStepsToHiddenForm();
+        const message = `${saveStepCount} steps saved to recipe form.`;
+        this.showMessage(message);
+    }
 
+
+    private saveStepsToHiddenForm(): number| null {
+        const mainForm = document.getElementById(`${this.config.mainFormId}`) as HTMLElement;
+        if (!mainForm) {
+            console.error('Main recipe form not found');
+            return null;
+        }
+
+        // Get the steps hidden container
+        const stepContainer = mainForm.querySelector('#steps-hidden') as HTMLElement;
+        if (!stepContainer) {
+            console.error('Steps hidden container not found');
+            return null;
+        }
+
+        // Clear existing hidden inputs
+        stepContainer.innerHTML = '';
+
+        // Collect step data from modal
+        const stepCards = this.htmlModal.querySelectorAll('.step-card');
+        let index = 0;
+
+        stepCards.forEach(card => {
+            const stepForm = card.querySelector('.step-form') as HTMLElement;
+            if (stepForm && !stepForm.hidden) {
+                const description = stepForm.querySelector('textarea[name*="description"]') as HTMLTextAreaElement;
+                
+                console.log('Step form:', stepForm);
+                if (description?.value) {
+                    // Create hidden inputs for each step field
+                    const order = stepForm.querySelector('input[name*="order"]') as HTMLInputElement;
+                    super.createHiddenTextArea(stepContainer, `steps-${index}-description`, description.value);
+                    super.createHiddenInput(stepContainer, `steps-${index}-order`, order.value || '', '');
+                    super.createHiddenInput(stepContainer, `steps-${index}-DELETE`, 'false', 'hidden');
+                    
+                    index++;
+                }
+            }
+        });
+
+        // Add management form hidden inputs
+        super.createHiddenInput(stepContainer, 'steps-TOTAL_FORMS', index.toString(), 'hidden');
+        super.createHiddenInput(stepContainer, 'steps-INITIAL_FORMS', '0', 'hidden');
+        super.createHiddenInput(stepContainer, 'steps-MIN_NUM_FORMS', '0', 'hidden');
+        super.createHiddenInput(stepContainer, 'steps-MAX_NUM_FORMS', '1000', 'hidden');
+
+        return index;
     }
 }

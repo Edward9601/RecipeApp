@@ -10,28 +10,69 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { BaseFormManager } from "./base_recipe_item.js";
 export class IngredientsManager extends BaseFormManager {
     constructor(config) {
-        var _a, _b;
         super(config);
-        this.reloadIngredients = false;
-        this.isUpdateMode = ((_b = (_a = this.saveButton) === null || _a === void 0 ? void 0 : _a.getAttribute('data-mode')) === null || _b === void 0 ? void 0 : _b.match(/update/i)) ? true : false;
-        this.SetUpModalEventListener();
-        this.setUpModalCloseProtection(this.htmlModal, this.htmlForm);
+        this.SetUpActionButtonsModalEventListener();
     }
-    SetUpModalEventListener() {
-        document.body.addEventListener('htmx:afterSwap', (event) => {
-            // Cast to CustomEvent with detail property
-            const customEvent = event;
-            if (customEvent.detail && customEvent.detail.target.id === 'ingredients-modal-container') {
-                const modalEl = document.getElementById('ingredientsModal');
-                if (modalEl) {
-                    const modal = new window.bootstrap.Modal(modalEl);
-                    modal.show();
+    SetUpActionButtonsModalEventListener() {
+        if (this.addButton) {
+            this.addButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                this.addItemToForm();
+            });
+        }
+        if (this.saveButton) {
+            this.saveButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (this.isUpdateMode) {
+                    const apiUrl = this.saveButton.dataset.url;
+                    this.handleUpdateSave(apiUrl);
+                    this.closeModal(this.htmlModal);
                 }
-            }
-        });
-        super.SetUpModalEventListener();
-        // Set up event delegation for remove buttons
-        super.setUpButtonsDelegationEventListeners('#ingredients-list');
+                else {
+                    this.handleCreateSave();
+                    this.closeModal(this.htmlModal);
+                }
+            });
+        }
+    }
+    setUpButtonsDelegationEventListeners() {
+        const itemList = this.htmlModal.querySelector('#ingredients-list');
+        if (itemList) {
+            itemList.addEventListener('click', (event) => {
+                const target = event.target;
+                if (target.matches('.remove-button')) {
+                    event.preventDefault();
+                    this.removeItemForm(target);
+                }
+                if (target.matches('.undo-btn')) {
+                    event.preventDefault();
+                    this.undoRemoveItemForm(target);
+                }
+            });
+        }
+        else {
+            console.error(`${this.config.fieldPrefix}s list not found.`);
+        }
+    }
+    undoRemoveItemForm(button) {
+        const itemCard = button.closest(`.${this.config.fieldPrefix}-card`);
+        if (!itemCard)
+            return;
+        // Show the ingredient form again
+        const itemForm = itemCard.querySelector(`.${this.config.fieldPrefix}-form`);
+        if (itemForm && itemForm.hidden) {
+            itemForm.hidden = false;
+        }
+        // Hide the undo section
+        const hiddenUndo = itemCard.querySelector('.hidden-undo');
+        if (hiddenUndo) {
+            hiddenUndo.style.display = 'none';
+        }
+        // Uncheck the DELETE checkbox
+        const deleteInput = itemCard.querySelector('input[name*="-DELETE"]');
+        if (deleteInput && deleteInput.checked) {
+            deleteInput.checked = false;
+        }
     }
     hasMeaningfulChanges(currentFormData, originalFormData) {
         const currentIngredients = this.extractNonEmptyIngredients(currentFormData);
@@ -63,29 +104,25 @@ export class IngredientsManager extends BaseFormManager {
         });
         return ingredients;
     }
-    setUpModalCloseProtection(ingredientModal, ingredientsForm) {
-        const _super = Object.create(null, {
-            checkForChanges: { get: () => super.checkForChanges },
-            closeModal: { get: () => super.closeModal }
-        });
-        return __awaiter(this, void 0, void 0, function* () {
-            ingredientModal.addEventListener('hide.bs.modal', (event) => {
-                _super.checkForChanges.call(this, ingredientsForm);
-                if (this.hasUnsavedChanges) {
-                    event.preventDefault();
-                    this.unsavedChangesManager.show(() => __awaiter(this, void 0, void 0, function* () {
-                        const apiUrl = this.saveButton.dataset.url;
-                        this.hasUnsavedChanges = false;
-                        yield this.handleUpdateSave(apiUrl);
-                        _super.closeModal.call(this, this.htmlModal);
-                    }), () => {
-                        this.reloadItems = true; // indicating to fetch data again on modal open
-                        this.hasUnsavedChanges = false;
-                        _super.closeModal.call(this, this.htmlModal);
-                    });
-                }
-            });
-        });
+    removeItemForm(button) {
+        const itemCard = button.closest('.ingredient-card');
+        if (!itemCard)
+            return;
+        let itemForm = itemCard.querySelector('.ingredient-form');
+        if (!itemForm)
+            return;
+        itemForm.hidden = true;
+        const undoButton = itemCard.querySelector('.hidden-undo');
+        if (undoButton) {
+            // Show the undo button
+            undoButton.style.display = 'block';
+        }
+        // Find the hidden DELETE checkbox
+        const deleteInput = itemForm.querySelector('input[name*="-DELETE"]');
+        if (deleteInput) {
+            // Mark for deletion and hide the form
+            deleteInput.value = 'on';
+        }
     }
     handleUpdateSave(apiUrl) {
         const _super = Object.create(null, {
@@ -131,7 +168,7 @@ export class IngredientsManager extends BaseFormManager {
                 const errorMessage = `Error saving ingredients: ${error instanceof Error ? error.message : 'Unknown error'}`;
                 this.showMessage(errorMessage);
             }
-            this.reloadIngredients = true; // indicating to fetch data again on modal open
+            this.reloadItems = true; // indicating to fetch data again on modal open
             _super.hideLoadingState.call(this);
         });
     }
@@ -145,7 +182,7 @@ export class IngredientsManager extends BaseFormManager {
             const li = document.createElement('li');
             const quantity = ingredient.quantity ? `${ingredient.quantity}` : '';
             const measurement = ingredient.measurement ? `${ingredient.measurement}` : '';
-            li.textContent = `${ingredient.name} ${quantity} ${measurement}`;
+            li.textContent = `${quantity} ${measurement} ${ingredient.name}`;
             // Hidden input to store ingredient ID for potential future use
             const deleteInput = document.createElement('input');
             deleteInput.type = 'hidden';
@@ -187,19 +224,19 @@ export class IngredientsManager extends BaseFormManager {
                 const measurementInput = ingredientForm.querySelector('select[name*="measurement"]');
                 if (nameInput === null || nameInput === void 0 ? void 0 : nameInput.value) {
                     // Create hidden inputs for each ingredient field
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-name`, nameInput.value);
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-quantity`, quantityInput.value || '');
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-measurement`, (measurementInput === null || measurementInput === void 0 ? void 0 : measurementInput.value) || '');
-                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-DELETE`, 'false');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-name`, nameInput.value, 'hidden');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-quantity`, quantityInput.value || '', 'hidden');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-measurement`, (measurementInput === null || measurementInput === void 0 ? void 0 : measurementInput.value) || '', 'hidden');
+                    super.createHiddenInput(ingredientsContainer, `ingredients-${ingredientIndex}-DELETE`, 'false', 'hidden');
                     ingredientIndex++;
                 }
             }
         });
         // Add management form hidden inputs
-        super.createHiddenInput(ingredientsContainer, 'ingredients-TOTAL_FORMS', ingredientIndex.toString());
-        super.createHiddenInput(ingredientsContainer, 'ingredients-INITIAL_FORMS', '0');
-        super.createHiddenInput(ingredientsContainer, 'ingredients-MIN_NUM_FORMS', '0');
-        super.createHiddenInput(ingredientsContainer, 'ingredients-MAX_NUM_FORMS', '1000');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-TOTAL_FORMS', ingredientIndex.toString(), 'hidden');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-INITIAL_FORMS', '0', 'hidden');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-MIN_NUM_FORMS', '0', 'hidden');
+        super.createHiddenInput(ingredientsContainer, 'ingredients-MAX_NUM_FORMS', '1000', 'hidden');
         return ingredientIndex;
     }
     // Ingredients formset management

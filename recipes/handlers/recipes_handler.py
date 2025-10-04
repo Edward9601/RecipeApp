@@ -36,6 +36,32 @@ def fetch_recipe_context_data_for_post_request(recipe: Recipe, request: WSGIRequ
     return context
 
 
+def fetch_recipe_context_data_for_update_post(recipe: Recipe, request: WSGIRequest, image_form: recipe_forms.RecipeImageForm, image_instance=None) -> dict:
+    """
+    Populates the context data for POST requests.
+    This function is used to handle form submissions and populate the context with form data.
+    """
+    # Fetch the formsets for ingredients and steps
+    ingredients_formset, steps_formset = recipe_forms.fetch_ingredients_and_steps_formsets()
+    
+    # For POST requests, we might not have a recipe instance yet, so we pass None
+    # The formsets will handle this properly
+    context = {
+        'ingredients_formset': ingredients_formset(request.POST,
+                                                instance=recipe,
+                                                prefix='ingredients'),
+        'steps_formset': steps_formset(request.POST,
+                                      instance=recipe,
+                                      prefix='steps'),
+    }
+    if request.FILES:
+        # If there are files in the request, ensure the image form is included
+        context['image_form'] = image_form(request.POST,
+                                           request.FILES,
+                                           instance=image_instance)
+    return context
+
+
 
 def fetch_recipe_context_data_for_get_request(recipe: Recipe, image_form: recipe_forms.RecipeImageForm, image_instance=None, extra_forms=0) -> dict:
     """
@@ -48,6 +74,21 @@ def fetch_recipe_context_data_for_get_request(recipe: Recipe, image_form: recipe
     context = {
         'ingredients_formset': ingredients_formset(instance=recipe, prefix='ingredients'),
         'steps_formset': steps_formset(instance=recipe, prefix='steps', initial=initial_data),
+        'image_form': image_form(instance=image_instance),
+        'categories': Category.objects.all(),
+        'tags': Tag.objects.all(),
+        'form': recipe_forms.RecipeCreateForm(instance=recipe),
+    }
+    return context
+
+
+def fetch_recipe_context_data_for_update(recipe: Recipe, image_form: recipe_forms.RecipeImageForm, image_instance=None) -> dict:
+    """
+    Populates the context data for POST requests.
+    This function is used to handle form submissions and populate the context with form data.
+    """
+    # Fetch the formsets for ingredients and steps
+    context = {
         'image_form': image_form(instance=image_instance),
         'categories': Category.objects.all(),
         'tags': Tag.objects.all(),
@@ -70,8 +111,11 @@ def fetch_partial_recipe_context_data_for_get(recipe: Recipe, partial_type: str,
         }
     elif partial_type == 'steps':
         steps_formset = recipe_forms.fetch_steps_form(extra_forms)
+        
+        # Set initial order to 1, ris field is hidden for better user expericence so first step should have order 1
+        initial_data = [{"order": 1}]
         return {
-            'steps_formset': steps_formset(instance=recipe, prefix='steps'),
+            'steps_formset': steps_formset(instance=recipe, prefix='steps', initial=initial_data), 
             'recipe': recipe if recipe else None,
         }
     return context
@@ -186,6 +230,8 @@ def save_recipe_and_forms(recipe: Recipe, context: dict) -> bool:
     ingredients_formset = context['ingredients_formset']
     steps_formset = context['steps_formset']
     image_form = context.get('image_form', None)
+    print(ingredients_formset)
+    print(steps_formset)
 
     forms_list = [ingredients_formset, steps_formset]
     if forms_valid(forms_list):

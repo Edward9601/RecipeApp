@@ -12,7 +12,8 @@ const ingredientsConfig = {
     removeButtonId: ".remove-button",
     mainFormId: "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
-    openModalButtonId: "openIngredientsButton"
+    openModalButtonId: "openIngredientsButton",
+    htmxTargetId: "ingredients-modal-container"
 };
 const stepsConfig = {
     fieldPrefix: "step",
@@ -23,7 +24,8 @@ const stepsConfig = {
     removeButtonId: ".remove-button",
     mainFormId: "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
-    openModalButtonId: "openStepsButton"
+    openModalButtonId: "openStepsButton",
+    htmxTargetId: "steps-modal-container"
 };
 document.addEventListener('DOMContentLoaded', () => {
     new FilterPanelManager();
