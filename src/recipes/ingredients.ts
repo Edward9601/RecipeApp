@@ -265,69 +265,41 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
 
         let formsetDiv = this.htmlModal.querySelector<HTMLElement>('#ingredients-formset');
         let totalFormsInput = this.htmlModal.querySelector<HTMLInputElement>('#id_ingredients-TOTAL_FORMS');
-
-        if (!formsetDiv || !totalFormsInput) {
-            console.error('Formset div or TOTAL_FORMS input not found.');
+        let emptyForm = this.htmlForm.querySelector<HTMLElement>('#empty-form');
+        if (!formsetDiv || !totalFormsInput || !emptyForm) {
+            console.error('Required elements not found.');
             return;
         }
         
         let totalForms = parseInt(totalFormsInput.value, 10);
+        
+        const newForm = emptyForm.cloneNode(true) as HTMLElement;
+        newForm.style.display = 'block';
+        const formElements = newForm.querySelectorAll('input, select, label');
 
-        const existingForm = formsetDiv.querySelector<HTMLElement>('.ingredient-form');
-        if (!existingForm) {
-            console.error('No existing form found to use as template.');
-            return;
-        }
-        
-        const existingCard = existingForm.closest('.ingredient-card') as HTMLElement;
-        if (!existingCard) {
-            console.error('No existing card found to use as template.');
-            return;
-        }
-        
-        const newCard = existingCard.cloneNode(true) as HTMLElement;
-        const ingredientForm = newCard.querySelector('.ingredient-form') as HTMLElement;
-        if (ingredientForm.hidden) {
-            ingredientForm.hidden = false;
-        }
-        
-        // Clear the form values
-        const inputs = newCard.querySelectorAll('input, select, textarea');
-        inputs.forEach((input: Element) => {
-            if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
-                input.value = '';
+        formElements.forEach((element: Element) => {
+            if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement) {
+                // Update names and IDs
+                if (element.name) {
+                    element.name = element.name.replace(/__prefix__/g, totalForms.toString());
+                }
+                if (element.id) {
+                    element.id = element.id.replace(/__prefix__/g, totalForms.toString());
+                }
             }
-        });
-        
-        // Update the form indices
-        const formIndex = totalForms;
-        inputs.forEach((input: Element) => {
-            if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) {
-                const name = input.name;
-                if (name) {
-                    input.name = name.replace(/ingredients-\d+/, `ingredients-${formIndex}`);
-                }
-                const id = input.id;
-                if (id) {
-                    input.id = id.replace(/id_ingredients-\d+/, `id_ingredients-${formIndex}`);
-                }
+            // Update label's 'for' attribute
+            if (element instanceof HTMLLabelElement && element.htmlFor) {
+                element.htmlFor = element.htmlFor.replace(/__prefix__/g, totalForms.toString());
             }
         });
 
         // Hide the undo section for new cards
-        const hiddenUndo = newCard.querySelector('.hidden-undo') as HTMLElement;
+        const hiddenUndo = newForm.querySelector('.hidden-undo') as HTMLElement;
         if (hiddenUndo) {
             hiddenUndo.style.display = 'none';
         }
-        // Create hidden DELETE checkbox for the new form
-        const hiddenDeleteDiv = document.createElement('div');
-        hiddenDeleteDiv.className = 'hidden-delete';
-        hiddenDeleteDiv.style.display = 'none';
-        hiddenDeleteDiv.innerHTML = `
-            <input type="checkbox" name="ingredients-${formIndex}-DELETE" id="id_ingredients-${formIndex}-DELETE">`;
 
-        formsetDiv.appendChild(newCard);
-        formsetDiv.appendChild(hiddenDeleteDiv);
+        formsetDiv.appendChild(newForm);
         totalFormsInput.value = (totalForms + 1).toString();
     }
 }

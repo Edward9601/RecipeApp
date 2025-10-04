@@ -32,6 +32,23 @@
                                             </div>   
                                         </div>  
                                     {% endfor %}
+                                    <div id="empty-step-form" style="display:none;">
+                                        <div class="step-card">
+                                            <div class="step-form border p-4 rounded shadow">
+                                                <div class="mb-3">
+                                                    {{ steps_formset.empty_form.order.label_tag.as_hidden }} {{ steps_formset.empty_form.order }}
+                                                    {{ steps_formset.empty_form.description.label_tag }} {{ steps_formset.empty_form.description }}
+                                                </div>
+                                                <div class="text-end">
+                                                    <button type="button" class="remove-button btn btn-secondary mt-2">Remove</button>
+                                                </div>
+                                                {{ steps_formset.empty_form.DELETE.as_hidden }}
+                                            </div>
+                                            <div class="hidden-undo" style="display:none;">
+                                                Step removed – <button type="button" class="undo-btn btn-secondary mt-2">Undo</button>
+                                            </div>   
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </form>

@@ -53,7 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function setUpModalAfterHtmxSwap(modalId: string, containerId: string, managerClass: any, config: FormManagerConfig) {
+function setUpModalAfterHtmxSwap(modalId: string, 
+    containerId: string, 
+    managerClass: any, 
+    config: FormManagerConfig) {
     if (document.getElementById(containerId)) {
         document.body.addEventListener('htmx:afterSwap', (event: Event) => {
             const customEvent = event as CustomEvent<{ target: HTMLElement }>;
