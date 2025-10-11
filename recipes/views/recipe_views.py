@@ -94,7 +94,7 @@ class RecipeDetailView(DetailView):
         
         if response is None:
             # If not in cache, get fresh data and cache it
-            queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'sub_recipes', 'categories', 'tags')
+            queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'parent_recipe', 'categories', 'tags')
             response = super().get_object(queryset)
             success, error_message = recipes_handler.set_cached_object(cache_key, response, timeout=60 * 60)  # Cache for 1 hour
             if not success:
