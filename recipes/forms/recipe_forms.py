@@ -46,12 +46,18 @@ class RecipeCreateForm(forms.ModelForm):
         help_text="Select tags"
     )
 
+    sub_recipes = forms.ModelMultipleChoiceField(
+        queryset=Recipe.objects.filter(is_sub_recipe=True),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+        help_text="Select sub-recipes"
+    )
+
     class Meta:
         model = Recipe
-        fields = ['title', 'description', 'parent_recipe', 'categories', 'tags', 'is_sub_recipe'] 
+        fields = ['title', 'description', 'parent_recipe', 'categories', 'tags'] 
         widgets = {
-            'parent_recipe': forms.CheckboxSelectMultiple(),
-            'is_sub_recipe': forms.CheckboxInput(),
+            'parent_recipe': forms.CheckboxSelectMultiple()
         }
 
 

@@ -111,7 +111,7 @@ def fetch_recipe_context_data_for_get_request(recipe: Recipe, image_form: recipe
         'image_form': image_form(instance=image_instance),
         'categories': Category.objects.all(),
         'tags': Tag.objects.all(),
-        'form': recipe_forms.RecipeCreateForm(instance=recipe),
+        'form': recipe_forms.RecipeCreateForm(instance=recipe)
     }
     return context
 
@@ -308,7 +308,7 @@ def update_recipe_sub_recipe_relationship(recipe: Recipe,new_recipes_to_add, cur
         if to_remove:
             recipe_sub_recipe_model.objects.filter(recipe=recipe, sub_recipe__in=to_remove).delete()
         if sub_recipes_to_add:
-            recipe_sub_recipe_model.objects.bulk_create([RecipeSubRecipe(recipe=recipe, sub_recipe=sub_recipe) 
+            recipe_sub_recipe_model.objects.bulk_create([RecipeSubRecipe(parent_recipe=recipe, sub_recipe=sub_recipe) 
                                                                 for sub_recipe 
                                                                 in sub_recipes_to_add])
     except Exception as e:

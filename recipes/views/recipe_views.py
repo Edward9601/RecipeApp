@@ -105,6 +105,7 @@ class RecipeDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['can_edit'] = self.can_edit_recipe()
+        print(context)
         return context
     
 
@@ -201,7 +202,7 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
                                                         self.request.POST.getlist('tags'))
                 
                 new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
-                current_sub_recipes = set(self.object.sub_recipes.all())
+                current_sub_recipes = set(self.object.parent_recipe.all())
                 if new_recipes_to_add and new_recipes_to_add != current_sub_recipes:
                     success, error_message = recipes_handler.update_recipe_sub_recipe_relationship(
                         self.object, new_recipes_to_add, current_sub_recipes, self.intermidiate_table)
@@ -223,7 +224,7 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         except IntegrityError as ie:
             form.add_error(None, "Database error occurred")
             return self.form_invalid(form)
-        except Exception:
+        except Exception as e:
             # log as needed
             form.add_error(None, "Failed to save recipe")
             return self.form_invalid(form) 

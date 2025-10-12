@@ -58,10 +58,10 @@
                             <li>No ingredients added yet.</li>
                         {% endfor %}
                     </ul>
-                    {% if object.sub_recipes.all %}
+                    {% if object.parent_recipe.all %}
                     <div class="mt-3">
                         <h3>Sub-Recipe Ingredients</h3>
-                        {% for sub_recipe in object.sub_recipes.all %}
+                        {% for sub_recipe in object.parent_recipe.all %}
                             <div class="mb-3">
                                 <h5><strong><a href="{% url 'recipes:sub_recipes_detail' sub_recipe.id %}">{{ sub_recipe.title }}</a></strong></h5>
                                 <ul>
