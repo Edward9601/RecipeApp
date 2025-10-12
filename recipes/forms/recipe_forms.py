@@ -25,7 +25,7 @@ class RecipeImageForm(forms.ModelForm):
             picture = ImageHandler.convert_to_jpeg(picture)
         return picture
 
-class RecipeHomeForm(forms.ModelForm):
+class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
         fields = ['title', 'description']
@@ -54,12 +54,6 @@ class RecipeCreateForm(forms.ModelForm):
             'is_sub_recipe': forms.CheckboxInput(),
         }
 
-        
-class RecipeDetailForm(forms.ModelForm):
-    class Meta:
-        model = Recipe
-        fields = ['title', 'description']
-
 
 class RecipeIngredientForm(forms.ModelForm):
     class Meta:
@@ -74,6 +68,12 @@ class RecipeStepForm(forms.ModelForm):
         widgets = {
             'order': forms.HiddenInput()
         }
+
+
+class SubRecipeForm(forms.ModelForm):
+    class Meta:
+        model = Recipe
+        fields = ['title']
 
 def fetch_ingredients_form(extra_forms:int =0) -> BaseInlineFormSet:
     """

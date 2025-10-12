@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.db import transaction, IntegrityError
 
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
-from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeHomeForm, RecipeIngredientForm, RecipeStepForm
+from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeForm, RecipeIngredientForm, RecipeStepForm
 from ..forms.recipe_filter_forms import RecipeFilterForm
 from utils.helpers.mixins import RegisteredUserAuthRequired
 
@@ -18,7 +18,7 @@ class RecipeListView(ListView):
     View to display all recipes
     """
     model = Recipe
-    form_class = RecipeHomeForm
+    form_class = RecipeForm
     template_name = 'recipes/home.html'
     context_object_name = 'recipes'
     paginate_by = 12
@@ -85,7 +85,7 @@ class RecipeDetailView(DetailView):
     View for recipe details, also displays related recipes
     """
     model = Recipe
-    form_class = RecipeHomeForm
+    form_class = RecipeForm
 
     def get_object(self, queryset=None):
         # Try to get cached data

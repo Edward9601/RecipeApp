@@ -2,21 +2,18 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
-
 from django.core.cache import cache
-from django.forms import inlineformset_factory
 
 from utils.helpers.mixins import RegisteredUserAuthRequired
-
-from ..models.sub_recipe_models import SubRecipeIngredient, SubRecipeStep, SubRecipe
-from ..forms.sub_recipe_forms import SubRecipeIngredientForm, SubRecipeStepForm, SubRecipeForm
-from ..handlers import sub_recipe_handler
+from ..models.recipe_models import RecipeSubRecipe, Recipe
+from ..forms.recipe_forms import SubRecipeForm
+from ..handlers import recipes_handler
 
 class SubRecipeListView(ListView):
     """
     View to display all sub recipes, it also handles search functionality.
     """
-    model = SubRecipe
+    model = Recipe
     form_class = SubRecipeForm
     template_name = 'sub_recipes/sub_recipe_home.html'
     context_object_name = 'sub_recipes'
@@ -37,6 +34,7 @@ class SubRecipeListView(ListView):
         cached_queryset_data = cache.get(cache_key)
         if cached_queryset_data is None:
             queryset = super().get_queryset()
+            queryset = queryset.filter(is_sub_recipe=True).prefetch_related('ingredients', 'steps')
             cache.set(cache_key, queryset, timeout=60 * 15)
             return queryset
         return cached_queryset_data
@@ -46,13 +44,13 @@ class SubRecipeListView(ListView):
         search_type = request.GET.get('searchType')
         if search:
             if search_type.lower() == 'title':
-                sub_recipes = self.model.objects.filter(title__icontains=search)
+                sub_recipes = self.model.objects.filter(title__icontains=search, is_sub_recipe=True)
             else:
                 sub_ingredients_to_search = [ingredient.strip() for ingredient in search.split(',') if ingredient.strip()]
 
                 query_set = self.model.objects.all()
                 for ingredient in sub_ingredients_to_search:
-                    query_set = query_set.filter(sub_ingredients__name__icontains=ingredient)
+                    query_set = query_set.filter(sub_ingredients__name__icontains=ingredient, sub_ingredients__is_sub_recipe=True)
                 sub_recipes = query_set.distinct()
         else:
             sub_recipes = self.model.objects.all()
@@ -63,7 +61,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     """"
     View to create sub recipes, it also handles the creation of ingredients and steps in the sub recipe.
     """
-    model = SubRecipe
+    model = Recipe
     form_class = SubRecipeForm
     template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
@@ -71,7 +69,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        sub_recipe_context_data = sub_recipe_handler.fetch_sub_recipe_context_data_for_get_request(self.object, extra_forms=1)
+        sub_recipe_context_data = recipes_handler.fetch_sub_recipe_context_data_for_get_request(self.object, extra_forms=1)
         context.update(sub_recipe_context_data)
         return context
 
@@ -79,7 +77,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
 
-        context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
+        context = recipes_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
         ingredients_formset = context['ingredients_formset']
         steps_formset = context['step_formset']
         if ingredients_formset.is_valid() and steps_formset.is_valid():
@@ -97,7 +95,7 @@ class SubRecipeDetailView(DetailView):
     """"
     View for sub recipe details, also displays related main recipes.
     """
-    model = SubRecipe
+    model = Recipe
     form_class = SubRecipeForm
     template_name = 'sub_recipes/subrecipe_detail.html'
 
@@ -105,7 +103,7 @@ class SubRecipeDetailView(DetailView):
         cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         cached_object_data = cache.get(cache_key)
         if cached_object_data is None:
-            queryset = self.get_queryset().prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
+            queryset = self.get_queryset().prefetch_related('ingredients', 'steps', 'parent_recipe')
             response = super().get_object(queryset)
             cache.set(cache_key, response, timeout=60 * 60)
             return response
@@ -131,15 +129,15 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     """
     View to update sub recipes.
     """
-    model = SubRecipe
+    model = Recipe
     form_class = SubRecipeForm
-    template_name = 'sub_recipes/recipe_form.html'
+    template_name = 'sub_recipes/sub_recipe_form.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         # Create formsets for ingredients and steps in sub recipe
-        sub_recipe_context_data = sub_recipe_handler.fetch_sub_recipe_context_data_for_get_request(self.object)
+        sub_recipe_context_data = recipes_handler.fetch_sub_recipe_context_data_for_get_request(self.object)
         context.update(sub_recipe_context_data)
         return context
 
@@ -147,11 +145,11 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         form.instance.author = self.request.user
         self.object = form.save(commit=False)
 
-        context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
+        context = recipes_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
         ingredients_formset = context.get('ingredients_formset')
         steps_formset = context.get('step_formset')
         forms_list = [ingredients_formset, steps_formset]
-        success = sub_recipe_handler.validate_forms(forms_list)
+        success = recipes_handler.validate_forms(forms_list)
         if success:
             ingredients_formset.save()
             steps_formset.save()
@@ -169,7 +167,7 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     View to delete sub recipes, it doesn't inherite from the becase because form_class messes up with it's logic
     """
     template_name = 'sub_recipes/subrecipe_confirm_delete.html'
-    model = SubRecipe
+    model = Recipe
     success_url = reverse_lazy('recipes:sub_recipes')
 
     def delete(self, request, *args, **kwargs):
