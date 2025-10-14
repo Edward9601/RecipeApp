@@ -3,11 +3,13 @@
 {% load static %}
 {% block content %}
 <div class="container">
-    <form id='sub-recipe-form' method="POST" action="{% if object %}{% url 'recipes:update_sub_recipe' object.id %}
+    <form id='recipe-form' method="POST" action="{% if object %}{% url 'recipes:update_sub_recipe' object.id %}
         {% else %}
         {% url 'recipes:create_sub_recipe' %}{% endif %}" 
         autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
+        <div id="ingredients-hidden"></div>
+        <div id="steps-hidden"></div>
         {{ form|crispy }}
         <div class="dropdown mb-4">
             {% include 'recipes/partials/recipe_action_buttons.html' with action="Edit"%}

@@ -18,7 +18,7 @@ class RecipeListView(ListView):
     View to display all recipes
     """
     model = Recipe
-    form_class = RecipeForm
+    form_class = RecipeFilterForm
     template_name = 'recipes/home.html'
     context_object_name = 'recipes'
     paginate_by = 12
@@ -31,11 +31,8 @@ class RecipeListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_url'] = 'recipes:recipe_search'
-        context['filter_form'] = self.get_filter_form()
+        context['filter_form'] = self.form_class(self.request.GET or None)
         return context
-
-    def get_filter_form(self):
-        return RecipeFilterForm(self.request.GET or None)
 
     def get_queryset(self):
         # Try to get cached data
@@ -47,7 +44,7 @@ class RecipeListView(ListView):
             success, error_maessage = recipes_handler.set_cached_object(cache_key, queryset, timeout=60 * 60)  # Cache for 1 hour
             if not success:
                 raise Exception(f"Failed to set cache: {error_maessage}")
-        form = self.get_filter_form()
+        form = self.form_class(self.request.GET or None)
         if form.is_valid():
             category = form.cleaned_data.get('category')
             tag = form.cleaned_data.get('tag')

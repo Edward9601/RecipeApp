@@ -66,27 +66,14 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        sub_recipe_context_data = recipes_handler.fetch_sub_recipe_context_data_for_get_request(self.object, extra_forms=1)
-        context.update(sub_recipe_context_data)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['extra_forms'] = 1
+        return kwargs
 
     def form_valid(self, form):
-        form.instance.author = self.request.user
-        self.object = form.save(commit=False)
-
-        context = recipes_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
-        ingredients_formset = context['ingredients_formset']
-        steps_formset = context['step_formset']
-        if ingredients_formset.is_valid() and steps_formset.is_valid():
-            form.save()
-            ingredients_formset.save()
-            steps_formset.save()
-        else:
-            return super().form_invalid(form)
-        # Invalidate cache for the sub recipe list
+        self.object = form.save()
         invalidate_recipe_cache()
         return redirect(self.object.get_absolute_url())
 
@@ -133,29 +120,14 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     form_class = SubRecipeForm
     template_name = 'sub_recipes/sub_recipe_form.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Create formsets for ingredients and steps in sub recipe
-        sub_recipe_context_data = recipes_handler.fetch_sub_recipe_context_data_for_get_request(self.object)
-        context.update(sub_recipe_context_data)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['extra_forms'] = 0
+        return kwargs
 
     def form_valid(self, form):
-        form.instance.author = self.request.user
-        self.object = form.save(commit=False)
-
-        context = recipes_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
-        ingredients_formset = context.get('ingredients_formset')
-        steps_formset = context.get('step_formset')
-        forms_list = [ingredients_formset, steps_formset]
-        success = recipes_handler.validate_forms(forms_list)
-        if success:
-            ingredients_formset.save()
-            steps_formset.save()
-            form.save()
-        else:
-            return self.form_invalid(form)
+        self.object = form.save()
         # Invalidate cache for the sub recipe list
         recipe_id = f'sub_recipe_detail_{self.object.id}'
         invalidate_recipe_cache(recipe_id)
