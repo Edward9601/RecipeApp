@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.db import transaction, IntegrityError
 
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
-from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeForm, RecipeIngredientForm, RecipeStepForm
+from ..forms.recipe_forms import RecipeCreateForm, RecipeImageForm, RecipeIngredientForm, RecipeStepForm
 from ..forms.recipe_filter_forms import RecipeFilterForm
 from utils.helpers.mixins import RegisteredUserAuthRequired
 
@@ -40,7 +40,7 @@ class RecipeListView(ListView):
         queryset = recipes_handler.get_cached_object(cache_key)
         if queryset is None:
             # If not in cache, get fresh data and cache it
-            queryset = super().get_queryset()
+            queryset = super().get_queryset().filter(is_sub_recipe=False)
             success, error_maessage = recipes_handler.set_cached_object(cache_key, queryset, timeout=60 * 60)  # Cache for 1 hour
             if not success:
                 raise Exception(f"Failed to set cache: {error_maessage}")
@@ -72,7 +72,7 @@ class RecipeListView(ListView):
             else:
                 return JsonResponse({'error': 'Invalid search type'}, status=400)
         else:
-            recipes = self.model.objects.all()
+            recipes = self.model.objects.filter(is_sub_recipe=False)
 
         return render(request, 'recipes/partials/recipe_list.html', {'recipes': recipes})
 
@@ -82,21 +82,21 @@ class RecipeDetailView(DetailView):
     View for recipe details, also displays related recipes
     """
     model = Recipe
-    form_class = RecipeForm
 
     def get_object(self, queryset=None):
         # Try to get cached data
         cache_key = f'recipe_detail_{self.kwargs.get("pk")}'
         response = recipes_handler.get_cached_object(cache_key)
         
-        if response is None:
+        #if response is None:
             # If not in cache, get fresh data and cache it
-            queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'parent_recipe', 'categories', 'tags')
-            response = super().get_object(queryset)
-            success, error_message = recipes_handler.set_cached_object(cache_key, response, timeout=60 * 60)  # Cache for 1 hour
-            if not success:
-                raise Exception(f"Failed to set cache: {error_message}")
-            return response
+        queryset = self.get_queryset().prefetch_related('steps', 'ingredients', 'parent_recipe', 'categories', 'tags')
+        response = super().get_object(queryset)
+        success, error_message = recipes_handler.set_cached_object(cache_key, response, timeout=60 * 60)  # Cache for 1 hour
+        if not success:
+            raise Exception(f"Failed to set cache: {error_message}")
+        return response
+        
         return response
 
     def get_context_data(self, **kwargs):
@@ -120,16 +120,14 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
     """
     model = Recipe
     form_class = RecipeCreateForm
-    image_form = RecipeImageForm
     intermidiate_table = RecipeSubRecipe
     template_name = 'recipes/recipe_create.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        recipe_context_get = recipes_handler.fetch_recipe_context_data_for_get_request(self.object, self.image_form, extra_forms=1)
-        context.update(recipe_context_get)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['extra_forms'] = 0
+        return kwargs
 
     def form_valid(self, form):
         """
@@ -137,23 +135,29 @@ class RecipeCreateView(RegisteredUserAuthRequired, CreateView):
         This method processes the form data, validates the ingredient and step formsets,
         and saves the recipe along with its associated ingredients, steps, categories, and tags.
         """
-        form.instance.author = self.request.user
-        self.object = form.save(commit=False)
-        context = recipes_handler.fetch_recipe_context_data_for_post_request(self.object, self.request, self.image_form)
-        success = recipes_handler.save_recipe_and_forms(self.object, context)
-        if not success:
+        try:
+            with transaction.atomic():
+                self.object = form.save()
+                sub_recipes = form.cleaned_data.get('sub_recipes')
+                if sub_recipes:
+                    form.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
+                                                            self.intermidiate_table)
+                # Save many-to-many relationships for categories and tags
+                form.save_m2m()  
+                # Clear the cache for recipe list to ensure new recipe appears
+                transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache())
+        except ValueError as ve:
+            # attach the error to the form and return invalid
+            form.add_error(None, str(ve))
             return self.form_invalid(form)
-                
-        recipes_handler.save_categories_and_tags(self.object,
-                                                 self.request.POST.getlist('categories'),
-                                                 self.request.POST.getlist('tags'))
-        # Handle sub-recipes
-        sub_recipes = form.cleaned_data.get('sub_recipes')
-        if sub_recipes:
-            recipes_handler.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
-                                                                self.intermidiate_table)
-        # Clear the cache for recipe list to ensure new recipe appears
-        recipes_handler.invalidate_recipe_cache()
+        except IntegrityError as ie:
+            form.add_error(None, "Database error occurred")
+            return self.form_invalid(form)
+        except Exception as e:
+            # log as needed
+            form.add_error(None, "Failed to save recipe")
+            return self.form_invalid(form) 
+        
         return redirect(self.object.get_absolute_url())
         
     

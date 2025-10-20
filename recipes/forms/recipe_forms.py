@@ -1,32 +1,21 @@
 from django import forms
 
-from ..models.recipe_models import Recipe, RecipeIngredient, RecipeStep, Tag, Category, RecipeImage
-from django.forms import BaseInlineFormSet, inlineformset_factory
+from ..models.recipe_models import Recipe, RecipeIngredient, RecipeStep, RecipeSubRecipe, RecipeImage
+from django.forms import BaseInlineFormSet, ModelForm, inlineformset_factory
 from utils.models import ImageHandler
 
 class RecipeFormManager:
     """Manager class to handle formset creation and management"""
     @staticmethod
-    def create_ingredient_formset(data=None, instance=None, extra=0):
-        IngredientFormSet = inlineformset_factory(
+    def create_formset(model: object, form: ModelForm, data=None, instance=None, extra=0):
+        FormSet = inlineformset_factory(
             Recipe, 
-            RecipeIngredient,
-            form=RecipeIngredientForm,
+            model,
+            form=form,
             extra=extra,
             can_delete=True
         )
-        return IngredientFormSet(data, instance=instance) if data else IngredientFormSet()
-
-    @staticmethod
-    def create_step_formset(data=None, instance=None, extra=0):
-        StepFormSet = inlineformset_factory(
-            Recipe, 
-            RecipeStep,
-            form=RecipeStepForm,
-            extra=extra,
-            can_delete=True
-        )
-        return StepFormSet(data, instance=instance) if data else StepFormSet()
+        return FormSet(data, instance=instance) if data else FormSet()
 
     @classmethod
     def get_recipe_forms(cls, data=None, instance=None, extra=0):
@@ -36,9 +25,18 @@ class RecipeFormManager:
             'step_formset': cls.create_step_formset(data, instance, extra),
             'image_form': RecipeImageForm(data) if data else RecipeImageForm()
         }
+    
+    @classmethod
+    def get_multiple_choice_field(cls, model: object, reuired:bool=False):
+        """Get a multiple choice field for a given model"""
+        return forms.ModelMultipleChoiceField(
+            queryset=model.objects.all(),
+            required=reuired,
+            widget=forms.CheckboxSelectMultiple()
+        )
 
 
-class RecipeImageForm(forms.ModelForm):
+class RecipeImageForm(ModelForm):
     class Meta:
         model = RecipeImage
         fields = ['picture']
@@ -55,53 +53,94 @@ class RecipeImageForm(forms.ModelForm):
 
     def clean_picture(self):
         picture = self.cleaned_data.get('picture')
-        if picture.name.endswith('.heic'):
+        if picture and picture.name.endswith('.heic'):
             picture = ImageHandler.convert_to_jpeg(picture)
         return picture
 
-class RecipeForm(forms.ModelForm):
+class RecipeForm(ModelForm):
     class Meta:
         model = Recipe
         fields = ['title', 'description']
 
 
-class RecipeCreateForm(forms.ModelForm):
-    categories = forms.ModelMultipleChoiceField(
-        queryset=Category.objects.all(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple(),
-        help_text="Select categories"
-    )
-    
-    tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple(),
-        help_text="Select tags"
-    )
-
-    sub_recipes = forms.ModelMultipleChoiceField(
-        queryset=Recipe.objects.filter(is_sub_recipe=True),
-        required=False,
-        widget=forms.CheckboxSelectMultiple(),
-        help_text="Select sub-recipes"
-    )
+class RecipeCreateForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        # pop extra args before calling super
+        self.user = kwargs.pop('user', None)
+        extra_forms = kwargs.pop('extra_forms', 1)
+        
+        # now call super with cleaned kwargs
+        super().__init__(*args, **kwargs)
+        data = kwargs.pop('data', None)
+        files = kwargs.pop('files', None)
+        self.ingredients_formset = RecipeFormManager.create_formset(RecipeIngredient, RecipeIngredientForm,data=data, instance=self.instance, extra=extra_forms)
+        self.steps_formset = RecipeFormManager.create_formset(RecipeStep, RecipeStepForm,data=data, instance=self.instance, extra=extra_forms)
+        self.image_form = RecipeImageForm(data=data,files=files)
+        if not self.user:
+            raise ValueError("User must be provided to initialize the RecipeCreateForm.")
+        self.fields['sub_recipes'] = forms.ModelMultipleChoiceField(
+            queryset=Recipe.objects.filter(author=self.user, is_sub_recipe=True),
+            required=False,
+            widget=forms.CheckboxSelectMultiple(),
+            help_text="Select sub-recipes"
+        )
 
     class Meta:
         model = Recipe
-        fields = ['title', 'description', 'parent_recipe', 'categories', 'tags'] 
-        widgets = {
-            'parent_recipe': forms.CheckboxSelectMultiple()
-        }
+        fields = ['title', 'description', 'categories', 'tags'] 
+
+    def is_valid(self) -> bool:
+        valid = super().is_valid()
+        if not valid:
+            return valid
+        if self.ingredients_formset.is_valid() and self.steps_formset.is_valid() and self.image_form.is_valid():
+            return valid
+        else:
+            return False
+    
+
+    def save(self, commit=True):
+        if not self.user:
+            raise ValueError("User must be provided to save the SubRecipeForm.")
+        instance = super().save(commit=False)
+        instance.author = self.user
+        instance.is_sub_recipe = False
+        if commit:
+            instance.save()
+            if self.ingredients_formset and self.ingredients_formset.has_changed():
+                self.ingredients_formset.instance = instance
+                self.ingredients_formset.save()
+            if self.steps_formset and self.steps_formset.has_changed():
+                self.steps_formset.instance = instance
+                self.steps_formset.save()
+            if self.image_form and self.image_form.has_changed():
+                self.image_form.instance.recipe = instance
+                self.image_form.save()
+        return instance
+    
+
+    def save_recipe_sub_recipe_relationship(self, recipe: Recipe, sub_recipes, intermidiate_table: RecipeSubRecipe) -> None:
+        """
+        Save the relationship between the recipe and its sub-recipes.
+        This method is used to save the relationship between the recipe and its sub-recipes.
+        """
+        for sub_recipe in sub_recipes:
+            intermidiate_table.objects.create(parent_recipe=recipe, sub_recipe=sub_recipe)
+    
 
 
-class RecipeIngredientForm(forms.ModelForm):
+class RecipeIngredientForm(ModelForm):
     class Meta:
         model = RecipeIngredient
         fields = ['name', 'quantity', 'measurement']
+        error_messages = {
+            'name': {
+                'reuired': "Please enter the ingredient name — it can’t be blank."
+            }
+        }
 
 
-class RecipeStepForm(forms.ModelForm):
+class RecipeStepForm(ModelForm):
     class Meta:
         model = RecipeStep
         fields = ['description', 'order']
@@ -109,8 +148,14 @@ class RecipeStepForm(forms.ModelForm):
             'order': forms.HiddenInput()
         }
 
+        error_messages = {
+            'description': {
+                'required': "Please enter the step description — it can’t be blank."
+                }
+            }
 
-class SubRecipeForm(forms.ModelForm):
+
+class SubRecipeForm(ModelForm):
     form_manager = RecipeFormManager()
     class Meta:
         model = Recipe
@@ -120,11 +165,17 @@ class SubRecipeForm(forms.ModelForm):
         # pop extra args before calling super
         self.user = kwargs.pop('user', None)
         extra_forms = kwargs.pop('extra_forms', 1)
-        data = kwargs.get('data', None)
         # now call super with cleaned kwargs
         super().__init__(*args, **kwargs)
-        self.ingredient_formset = self.form_manager.create_ingredient_formset(data=data,instance=self.instance, extra=extra_forms)
-        self.step_formset = self.form_manager.create_step_formset(data=data,instance=self.instance, extra=extra_forms)
+        data = kwargs.get('data', None)
+        self.ingredient_formset = self.form_manager.create_formset(RecipeIngredient, RecipeIngredientForm,data=data,instance=self.instance, extra=extra_forms)
+        self.step_formset = self.form_manager.create_formset(RecipeStep, RecipeStepForm,data=data,instance=self.instance, extra=extra_forms)
+        self.fields['sub_recipes'] = forms.ModelMultipleChoiceField(
+            queryset=Recipe.objects.filter(is_sub_recipe=True),
+            required=False,
+            widget=forms.CheckboxSelectMultiple(),
+            help_text="Select sub-recipes"
+        )
 
 
     def is_valid(self):
@@ -133,16 +184,19 @@ class SubRecipeForm(forms.ModelForm):
         return valid
     
     def save(self, commit=True):
+        if not self.user:
+            raise ValueError("User must be provided to save the SubRecipeForm.")
         instance = super().save(commit=False)
-        if self.user:
-            instance.author = self.user
+        instance.author = self.user
         instance.is_sub_recipe = True
         if commit:
             instance.save()
-            self.ingredient_formset.instance = instance
-            self.ingredient_formset.save()
-            self.step_formset.instance = instance
-            self.step_formset.save()
+            if self.ingredient_formset and self.ingredient_formset.has_changed():
+                self.ingredient_formset.instance = instance
+                self.ingredient_formset.save()
+            if self.step_formset and self.step_formset.has_changed():
+                self.step_formset.instance = instance
+                self.step_formset.save()
         return instance
 
 

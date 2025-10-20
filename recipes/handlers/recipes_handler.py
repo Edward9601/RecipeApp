@@ -198,15 +198,6 @@ def save_image_form(recipe: Recipe, image_form: recipe_forms.RecipeImageForm) ->
         image_form.instance.picture.name = new_name
     image_form.save()
 
-def save_recipe_sub_recipe_relationship(recipe: Recipe, sub_recipes, intermidiate_table: RecipeSubRecipe) -> None:
-    """
-    Save the relationship between the recipe and its sub-recipes.
-    This method is used to save the relationship between the recipe and its sub-recipes.
-    """
-    for sub_recipe in sub_recipes:
-        intermidiate_table.objects.create(recipe=recipe, sub_recipe=sub_recipe)
-
-
 def forms_valid(forms) -> bool:
     """
     Check if the ingredient and step formsets are valid.
@@ -264,8 +255,6 @@ def save_recipe_and_forms(recipe: Recipe, context: dict) -> bool:
     ingredients_formset = context['ingredients_formset']
     steps_formset = context['steps_formset']
     image_form = context.get('image_form', None)
-    print(ingredients_formset)
-    print(steps_formset)
 
     forms_list = [ingredients_formset, steps_formset]
     if forms_valid(forms_list):

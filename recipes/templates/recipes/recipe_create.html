@@ -11,8 +11,12 @@
         <div id="categories-hidden"></div>
         <div id="tags-hidden"></div>
         <div id="sub-recipes-hidden"></div>
-        <div id="ingredients-hidden"></div>
-        <div id="steps-hidden"></div>
+        <div id="ingredients-hidden">
+            {{ form.ingredients_formset.management_form }}
+        </div>
+        <div id="steps-hidden">
+            {{ form.steps_formset.management_form }}
+        </div>
         <div class="mb-3">
             {{ form.title|as_crispy_field }}
         </div>
@@ -20,7 +24,8 @@
             {{ form.description|as_crispy_field }}
         </div>
         <div class="mb-3" id="id_picture">
-            {{ image_form.picture|as_crispy_field }}
+            {{ form.image_form.picture|as_crispy_field }}
+            
             <img id="image-preview" src="#" alt="Image preview" style="display:none; max-width: 300px; margin-top: 10px;" />
         </div>
         <div class="dropdown mb-4">
