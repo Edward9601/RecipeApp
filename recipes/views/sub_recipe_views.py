@@ -14,7 +14,6 @@ class SubRecipeListView(ListView):
     View to display all sub recipes, it also handles search functionality.
     """
     model = Recipe
-    form_class = SubRecipeForm
     template_name = 'sub_recipes/sub_recipe_home.html'
     context_object_name = 'sub_recipes'
 
@@ -83,7 +82,6 @@ class SubRecipeDetailView(DetailView):
     View for sub recipe details, also displays related main recipes.
     """
     model = Recipe
-    form_class = SubRecipeForm
     template_name = 'sub_recipes/subrecipe_detail.html'
 
     def get_object(self, queryset=None):
@@ -127,11 +125,16 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         return kwargs
 
     def form_valid(self, form):
-        self.object = form.save()
-        # Invalidate cache for the sub recipe list
-        recipe_id = f'sub_recipe_detail_{self.object.id}'
-        invalidate_recipe_cache(recipe_id)
-        return super().form_valid(form)
+        try:
+            self.object = form.save()
+            # Invalidate cache for the sub recipe list
+            recipe_id = f'sub_recipe_detail_{self.object.id}'
+            invalidate_recipe_cache(recipe_id)
+            return super().form_valid(form)
+        except Exception as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
+        
 
 
 class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
