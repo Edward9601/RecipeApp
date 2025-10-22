@@ -1,11 +1,10 @@
 import { RecipeManager } from './recipes.js';
-import { SubRecipeManager } from './sub_recipes.js';
 import { FilterPanelManager } from './filter_panel.js';
 import { IngredientsManager } from './ingredients.js';
 import { StepsManager } from './recipe_steps.js';
 import { FormManagerConfig } from './interfaces/recipe_items_interfaces.js'
 
-
+const form = document.querySelector('#recipe-form, #sub-recipe-form');
 const ingredientsConfig: FormManagerConfig = {
     fieldPrefix: "ingredient",
     htmlModalId: "ingredientsModal",
@@ -13,7 +12,7 @@ const ingredientsConfig: FormManagerConfig = {
     addButtonId: "add-ingredient-button",
     saveButtonId: "save-ingredients-button",
     removeButtonId: ".remove-button",
-    mainFormId: "recipe-form",
+    mainFormId: form!.id || "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
     openModalButtonId: "openIngredientsButton",
     htmxTargetId: "ingredients-modal-container"
@@ -28,7 +27,7 @@ const stepsConfig: FormManagerConfig = {
     addButtonId: "add-steps-button",
     saveButtonId: "save-steps-button",
     removeButtonId: ".remove-button",
-    mainFormId: "recipe-form",
+    mainFormId: form!.id || "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
     openModalButtonId: "openStepsButton",
     htmxTargetId: "steps-modal-container"
@@ -37,11 +36,8 @@ const stepsConfig: FormManagerConfig = {
 
 document.addEventListener('DOMContentLoaded', () => {
     new FilterPanelManager();
-    if (document.getElementById('recipe-form')) {
-        new RecipeManager();
-    }
-    if(document.getElementById('sub-recipe-form')){
-        new SubRecipeManager();
+    if (form) {
+        new RecipeManager(form.id);
     }
 
     if (document.getElementById('ingredients-modal-container')) {

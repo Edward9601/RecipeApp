@@ -23,8 +23,8 @@ export class RecipeManager {
 
     private imagePreview: HTMLImageElement | null = null;
     
-    constructor() {
-        this.mainForm = document.getElementById('recipe-form') as HTMLFormElement;
+    constructor(formId: string) {
+        this.mainForm = document.getElementById(formId) as HTMLFormElement;
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal') as HTMLElement;
         this.imagePreview = document.getElementById('image-preview') as HTMLImageElement;
 

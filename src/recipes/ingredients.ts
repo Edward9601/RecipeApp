@@ -2,7 +2,6 @@
 import { Ingredient } from "./interfaces/recipe_items_interfaces.js";
 import { BaseFormManager } from "./base_recipe_item.js";
 import { FormManagerConfig } from './interfaces/recipe_items_interfaces.js'
-import { RecipeManager } from "./recipes.js";
 
 export class IngredientsManager extends BaseFormManager<Ingredient> {
 

@@ -62,6 +62,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     """
     model = Recipe
     form_class = SubRecipeForm
+    intermidiate_table = RecipeSubRecipe
     template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
@@ -73,6 +74,10 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
 
     def form_valid(self, form):
         self.object = form.save()
+        sub_recipes = form.cleaned_data.get('sub_recipes')
+        if sub_recipes:
+            form.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
+                                                            self.intermidiate_table)
         invalidate_recipe_cache()
         return redirect(self.object.get_absolute_url())
 
@@ -86,12 +91,12 @@ class SubRecipeDetailView(DetailView):
 
     def get_object(self, queryset=None):
         cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
-        cached_object_data = cache.get(cache_key)
-        if cached_object_data is None:
-            queryset = self.get_queryset().prefetch_related('ingredients', 'steps', 'parent_recipe')
-            response = super().get_object(queryset)
-            cache.set(cache_key, response, timeout=60 * 60)
-            return response
+        # cached_object_data = cache.get(cache_key)
+        # if cached_object_data is None:
+        queryset = self.get_queryset().prefetch_related('ingredients', 'steps', 'parent_recipe')
+        response = super().get_object(queryset)
+        cache.set(cache_key, response, timeout=60 * 60)
+        return response
         return cached_object_data
     
 
@@ -116,6 +121,7 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     """
     model = Recipe
     form_class = SubRecipeForm
+    intermidiate_table = RecipeSubRecipe
     template_name = 'sub_recipes/sub_recipe_form.html'
 
     def get_form_kwargs(self):
@@ -128,9 +134,23 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         try:
             self.object = form.save()
             # Invalidate cache for the sub recipe list
-            recipe_id = f'sub_recipe_detail_{self.object.id}'
+            existing_sub_recipes = set(self.object.sub_recipe.all())
+            new_sub_recipes = set(form.cleaned_data.get('sub_recipes'))
+            # Remove old relationships
+            if existing_sub_recipes != new_sub_recipes:
+                success, message = form.update_recipe_sub_recipe_relationship(
+                    self.object,
+                    new_sub_recipes,
+                    existing_sub_recipes,
+                    self.intermidiate_table
+                )
+                if not success:
+                    form.add_error(None, message)
+                    return self.form_invalid(form)
+            # Invalidate cache for this sub recipe
+            recipe_id = f'sub_recipe_detail_{self.object.pk}'
             invalidate_recipe_cache(recipe_id)
-            return super().form_valid(form)
+            return redirect(self.object.get_absolute_url())
         except Exception as e:
             form.add_error(None, str(e))
             return self.form_invalid(form)

@@ -1,7 +1,7 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.db import transaction, IntegrityError
 
 from ..models.recipe_models import RecipeSubRecipe, Recipe, Category, Tag
@@ -96,8 +96,6 @@ class RecipeDetailView(DetailView):
         if not success:
             raise Exception(f"Failed to set cache: {error_message}")
         return response
-        
-        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -172,13 +170,11 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     template_name = 'recipes/recipe_update.html'
     intermidiate_table = RecipeSubRecipe
 
-    def get_context_data(self, **kwargs):
-        context =  super().get_context_data(**kwargs)
-        
-        image_instance = self.model.objects.filter(id=self.object.id).first().images.first() if self.object.images.exists() else None
-        recipe_context_get = recipes_handler.fetch_recipe_context_data_for_update(self.object, self.image_form,image_instance)
-        context.update(recipe_context_get)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['extra_forms'] = 0
+        return kwargs
 
 
     def form_valid(self, form):
@@ -261,23 +257,10 @@ class RecipeDeleteView(DeleteView):
         This method overrides the default post method to ensure that the recipe is deleted
         and the cache is invalidated for both the recipe detail and the recipe list.
         """
-        return self.delete(request, *args, **kwargs)
-
-
-
-def get_categories_and_tags(request):
-    """
-    Returns categories and tags as JSON response.
-    """
-    
-    categories = Category.objects.all()
-    tags = Tag.objects.all()
-
-    data = {
-        'categories': [{'id': category.id, 'name': category.name} for category in categories],
-        'tags': [{'id': tag.id, 'name': tag.name} for tag in tags]
-    }
-    return JsonResponse(data)
+        if self.request.user == self.get_object().author:
+            return self.delete(request, *args, **kwargs)
+        else:
+            return HttpResponseForbidden()
 
 
 class IngredientsPartialView(RegisteredUserAuthRequired, View):

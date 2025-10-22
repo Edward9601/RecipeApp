@@ -1,8 +1,8 @@
 import { RecipeManager } from './recipes.js';
-import { SubRecipeManager } from './sub_recipes.js';
 import { FilterPanelManager } from './filter_panel.js';
 import { IngredientsManager } from './ingredients.js';
 import { StepsManager } from './recipe_steps.js';
+const form = document.querySelector('#recipe-form, #sub-recipe-form');
 const ingredientsConfig = {
     fieldPrefix: "ingredient",
     htmlModalId: "ingredientsModal",
@@ -10,7 +10,7 @@ const ingredientsConfig = {
     addButtonId: "add-ingredient-button",
     saveButtonId: "save-ingredients-button",
     removeButtonId: ".remove-button",
-    mainFormId: "recipe-form",
+    mainFormId: form.id || "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
     openModalButtonId: "openIngredientsButton",
     htmxTargetId: "ingredients-modal-container"
@@ -22,18 +22,15 @@ const stepsConfig = {
     addButtonId: "add-steps-button",
     saveButtonId: "save-steps-button",
     removeButtonId: ".remove-button",
-    mainFormId: "recipe-form",
+    mainFormId: form.id || "recipe-form",
     htmlDetailPageId: ".recipe-detail-container",
     openModalButtonId: "openStepsButton",
     htmxTargetId: "steps-modal-container"
 };
 document.addEventListener('DOMContentLoaded', () => {
     new FilterPanelManager();
-    if (document.getElementById('recipe-form')) {
-        new RecipeManager();
-    }
-    if (document.getElementById('sub-recipe-form')) {
-        new SubRecipeManager();
+    if (document.getElementById('recipe-form') || document.getElementById('sub-recipe-form')) {
+        new RecipeManager(form.id);
     }
     if (document.getElementById('ingredients-modal-container')) {
         setUpModalAfterHtmxSwap('ingredientsModal', 'ingredients-modal-container', IngredientsManager, ingredientsConfig);

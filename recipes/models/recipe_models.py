@@ -2,10 +2,12 @@ from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.forms import ValidationError
-from utils.models import AbstractImageModel
+from utils.models import AbstractImageModel, ImageHandler
 from django.urls import reverse
 
 from .base_models import BaseRecipe, Ingredient, Step
+
+import os
 
 
 """
@@ -53,6 +55,8 @@ class Recipe(BaseRecipe):
     tags = models.ManyToManyField(Tag, related_name='recipes', blank=True)
 
     def get_absolute_url(self):
+        if self.is_sub_recipe:
+            return reverse('recipes:sub_recipes_detail', kwargs={'pk': self.pk})
         return reverse('recipes:detail', kwargs={'pk': self.pk})
 
 
@@ -63,6 +67,18 @@ class RecipeImage(AbstractImageModel):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='images')
 
     thumbnail_folder = 'recipes_pictures_thumbs_medium'
+
+
+    def save(self, *args, **kwargs):
+        # Only rename if both recipe and picture are set
+        if self.picture and self.recipe:
+            image_handler = ImageHandler(self.picture)
+            orig = self.picture
+            ext = os.path.splitext(orig.name)[1]
+            base_name = image_handler.slugify_name(self.recipe.title)
+            new_name = f'{base_name}{ext}'
+            self.picture.name = new_name
+        super().save(*args, **kwargs)
 
     def get_thumbnail_url(self,):
 
