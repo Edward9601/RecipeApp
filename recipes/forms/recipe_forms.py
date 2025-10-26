@@ -328,7 +328,7 @@ class SubRecipeUpdateForm(ModelForm):
         )
         if self.instance and self.instance.pk:
             self.fields.get('sub_recipes').queryset = self.fields.get('sub_recipes').queryset.exclude(pk=self.instance.pk)
-            self.fields['sub_recipes'].initial = self.instance.sub_recipes.all()
+            self.fields['sub_recipes'].initial = self.instance.sub_recipe.all()
 
 
     def is_valid(self):
