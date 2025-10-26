@@ -3,10 +3,11 @@ from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
 from django.core.cache import cache
+from django.db import transaction, IntegrityError
 
 from utils.helpers.mixins import RegisteredUserAuthRequired
 from ..models.recipe_models import RecipeSubRecipe, Recipe
-from ..forms.recipe_forms import SubRecipeForm
+from ..forms.recipe_forms import SubRecipeCreateForm, SubRecipeUpdateForm
 from ..handlers import recipes_handler
 
 class SubRecipeListView(ListView):
@@ -61,7 +62,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     View to create sub recipes, it also handles the creation of ingredients and steps in the sub recipe.
     """
     model = Recipe
-    form_class = SubRecipeForm
+    form_class = SubRecipeCreateForm
     intermidiate_table = RecipeSubRecipe
     template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
@@ -73,12 +74,26 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        self.object = form.save()
-        sub_recipes = form.cleaned_data.get('sub_recipes')
-        if sub_recipes:
-            form.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
-                                                            self.intermidiate_table)
-        invalidate_recipe_cache()
+        try:
+            with transaction.atomic():
+                self.object = form.save()
+                sub_recipes = form.cleaned_data.get('sub_recipes')
+                if sub_recipes:
+                    form.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
+                                                                    self.intermidiate_table)
+            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache())
+        except ValueError as ve:
+            # attach the error to the form and return invalid
+            form.add_error(None, str(ve))
+            return self.form_invalid(form)
+        except IntegrityError as ie:
+            form.add_error(None, "Database error occurred")
+            return self.form_invalid(form)
+        except Exception as e:
+            # log as needed
+            form.add_error(None, "Failed to save recipe")
+            return self.form_invalid(form) 
+        
         return redirect(self.object.get_absolute_url())
 
 
@@ -91,12 +106,12 @@ class SubRecipeDetailView(DetailView):
 
     def get_object(self, queryset=None):
         cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
-        # cached_object_data = cache.get(cache_key)
-        # if cached_object_data is None:
-        queryset = self.get_queryset().prefetch_related('ingredients', 'steps', 'parent_recipe')
-        response = super().get_object(queryset)
-        cache.set(cache_key, response, timeout=60 * 60)
-        return response
+        cached_object_data = cache.get(cache_key)
+        if cached_object_data is None:
+            queryset = self.get_queryset().prefetch_related('ingredients', 'steps', 'parent_recipe')
+            response = super().get_object(queryset)
+            cache.set(cache_key, response, timeout=60 * 60)
+            return response
         return cached_object_data
     
 
@@ -120,7 +135,7 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     View to update sub recipes.
     """
     model = Recipe
-    form_class = SubRecipeForm
+    form_class = SubRecipeUpdateForm
     intermidiate_table = RecipeSubRecipe
     template_name = 'sub_recipes/sub_recipe_form.html'
 
@@ -132,28 +147,44 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
 
     def form_valid(self, form):
         try:
-            self.object = form.save()
-            # Invalidate cache for the sub recipe list
-            existing_sub_recipes = set(self.object.sub_recipe.all())
-            new_sub_recipes = set(form.cleaned_data.get('sub_recipes'))
-            # Remove old relationships
-            if existing_sub_recipes != new_sub_recipes:
-                success, message = form.update_recipe_sub_recipe_relationship(
-                    self.object,
-                    new_sub_recipes,
-                    existing_sub_recipes,
-                    self.intermidiate_table
-                )
-                if not success:
-                    form.add_error(None, message)
-                    return self.form_invalid(form)
-            # Invalidate cache for this sub recipe
-            recipe_id = f'sub_recipe_detail_{self.object.pk}'
-            invalidate_recipe_cache(recipe_id)
-            return redirect(self.object.get_absolute_url())
-        except Exception as e:
-            form.add_error(None, str(e))
+            with transaction.atomic():
+                self.object = form.save()
+                if 'sub_recipes' in form.changed_data:
+                    existing_sub_recipes = set(self.object.sub_recipe.all())
+                    new_sub_recipes = set(form.cleaned_data.get('sub_recipes'))
+                    sub_recipe_id = f'sub_recipe_detail_{self.object.pk}'
+                    if not existing_sub_recipes:
+                        if new_sub_recipes:
+                            form.save_recipe_sub_recipe_relationship(
+                                self.object,
+                                new_sub_recipes,
+                                self.intermidiate_table
+                            )
+                    if existing_sub_recipes != new_sub_recipes:
+                        # Remove old relationships
+                        success, message = form.update_recipe_sub_recipe_relationship(
+                            self.object,
+                            new_sub_recipes,
+                            existing_sub_recipes,
+                            self.intermidiate_table
+                        )
+                        if not success:
+                            raise ValueError(message)
+                    # Invalidate cache for this sub recipe
+            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache(sub_recipe_id))
+        except ValueError as ve:
+            # attach the error to the form and return invalid
+            form.add_error(None, str(ve))
             return self.form_invalid(form)
+        except IntegrityError as ie:
+            form.add_error(None, "Database error occurred")
+            return self.form_invalid(form)
+        except Exception as e:
+            # log as needed
+            form.add_error(None, "Failed to save recipe")
+            return self.form_invalid(form) 
+        
+        return redirect(self.get_success_url())
         
 
 
@@ -174,7 +205,6 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
         # Invalidate cache for this recipe and the recipe list
         cache_key_detail = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         invalidate_recipe_cache(cache_key_detail)
-
         return super().delete(request, *args, **kwargs)
     
 
@@ -195,4 +225,3 @@ def invalidate_recipe_cache(recipe_id=None):
         cache_key_detail = f'sub_recipe_detail_{recipe_id}'
         cache.delete(cache_key_detail)
     cache.delete('sub_recipe_list_queryset')
-    return JsonResponse({'status': 'Cache invalidated'})

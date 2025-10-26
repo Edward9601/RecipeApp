@@ -12,26 +12,40 @@ export class BaseFormManager {
     constructor(config) {
         var _a, _b;
         this.unsavedChangesManager = UnsavedChangesModalManager.getInstance();
+        this.mainForm = null;
         this.isUpdateMode = null;
+        this.isCreateMode = false;
+        this.isDetailPage = null;
         this.hasUnsavedChanges = false;
         this.reloadItems = false;
         this.originalFormData = null;
-        this.detailPage = null;
+        this.recipeType = 'recipe';
         this.isBound = false;
         this.config = config;
         this.htmlModal = document.getElementById(config.htmlModalId);
-        if (this.htmlModal) {
-            this.htmlForm = document.getElementById(config.htmlFormId);
-            this.addButton = document.getElementById(config.addButtonId);
-            this.saveButton = document.getElementById(config.saveButtonId);
-            this.detailPage = document.querySelector(config.htmlDetailPageId);
-            this.mainForm = document.getElementById(config.mainFormId);
-            this.isUpdateMode = ((_b = (_a = this.saveButton) === null || _a === void 0 ? void 0 : _a.getAttribute('data-mode')) === null || _b === void 0 ? void 0 : _b.match(/update/i)) ? true : false;
-            this.originalFormData = this.getFormData(this.htmlForm);
-            if (!this.isBound) {
-                this.templateInitialize();
-                this.isBound = true;
-            }
+        this.htmlForm = document.getElementById(config.htmlFormId);
+        this.addButton = document.getElementById(config.addButtonId);
+        this.saveButton = document.getElementById(config.saveButtonId);
+        this.isDetailPage = document.querySelector(config.htmlDetailPageId);
+        this.isCreateMode = !this.isDetailPage;
+        this.isUpdateMode = ((_b = (_a = this.saveButton) === null || _a === void 0 ? void 0 : _a.getAttribute('data-mode')) === null || _b === void 0 ? void 0 : _b.match(/update/i)) ? true : false;
+        this.originalFormData = this.getFormData(this.htmlForm);
+        if (!this.isBound) {
+            this.templateInitialize();
+            this.detectContext();
+            this.isBound = true;
+        }
+    }
+    detectContext() {
+        // Detect main form
+        this.mainForm = document.querySelector('#recipe-form, #sub-recipe-form');
+        // Detect recipe type
+        if (this.mainForm) {
+            this.recipeType = this.mainForm.id === 'sub-recipe-form' ? 'sub_recipe' : 'recipe';
+        }
+        else {
+            // Check URL or page content for recipe type
+            this.recipeType = window.location.pathname.includes('sub-recipes') ? 'sub_recipe' : 'recipe';
         }
     }
     templateInitialize() {

@@ -124,8 +124,8 @@ export class StepsManager extends BaseFormManager {
                 const result = yield response.json();
                 if (result.success) {
                     this.showMessage('Steps saved successfully.');
-                    if (this.detailPage) {
-                        this.updateFormStep(result.steps, this.detailPage);
+                    if (this.isDetailPage) {
+                        this.updateFormStep(result.steps, this.isDetailPage);
                     }
                 }
                 else {
@@ -247,13 +247,12 @@ export class StepsManager extends BaseFormManager {
         this.showMessage(message);
     }
     saveStepsToHiddenForm() {
-        const mainForm = document.getElementById(`${this.config.mainFormId}`);
-        if (!mainForm) {
+        if (!this.mainForm) {
             console.error('Main recipe form not found');
             return null;
         }
         // Get the steps hidden container
-        const stepContainer = mainForm.querySelector('#steps-hidden');
+        const stepContainer = this.mainForm.querySelector('#steps-hidden');
         if (!stepContainer) {
             console.error('Steps hidden container not found');
             return null;
@@ -272,7 +271,7 @@ export class StepsManager extends BaseFormManager {
                     // Create hidden inputs for each step field
                     const order = stepForm.querySelector('input[name*="order"]');
                     super.createHiddenTextArea(stepContainer, `steps-${index}-description`, description.value);
-                    super.createHiddenInput(stepContainer, `steps-${index}-order`, order.value || '', '');
+                    super.createHiddenInput(stepContainer, `steps-${index}-order`, order.value || '', 'hidden');
                     super.createHiddenInput(stepContainer, `steps-${index}-DELETE`, 'false', 'hidden');
                     index++;
                 }

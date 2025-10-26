@@ -41,7 +41,9 @@ class RecipeImageForm(ModelForm):
         model = RecipeImage
         fields = ['picture']
 
-    def save(self, commit=True): # Currently being triggerend even if image is not submitted
+    def save(self, commit=True):
+        if not self.cleaned_data.get('picture') and 'picture' not in self.changed_data:
+            return None  # No image to save
         instance = super().save(commit=False)
         if commit:
             instance.save()
@@ -50,10 +52,15 @@ class RecipeImageForm(ModelForm):
                 instance.create_thumbnail(instance.thumbnail_folder, instance.picture.name, size=(600, 600))
         return instance
     
+    def is_valid(self) -> bool:
+        if not self.data and not self.files:
+            return True  # No image provided, consider valid
+        return super().is_valid()
+    
 
     def clean_picture(self):
         picture = self.cleaned_data.get('picture')
-        if picture and picture.name.endswith('.heic'):
+        if picture and not picture.name.endswith('.jpeg') and not picture.name.endswith('.jpg'):
             picture = ImageHandler.convert_to_jpeg(picture)
         return picture
 
@@ -75,7 +82,8 @@ class RecipeCreateForm(ModelForm):
         files = kwargs.pop('files', None)
         self.ingredients_formset = RecipeFormManager.create_formset(RecipeIngredient, RecipeIngredientForm,data=data, instance=self.instance, extra=extra_forms)
         self.steps_formset = RecipeFormManager.create_formset(RecipeStep, RecipeStepForm,data=data, instance=self.instance, extra=extra_forms)
-        self.image_form = RecipeImageForm(data=data,files=files)
+        image_instance = self.instance.images.first() if self.instance and self.instance.pk else None
+        self.image_form = RecipeImageForm(data=data,files=files, instance=image_instance)
         if not self.user:
             raise ValueError("User must be provided to initialize the RecipeCreateForm.")
         self.fields['sub_recipes'] = forms.ModelMultipleChoiceField(
@@ -127,6 +135,82 @@ class RecipeCreateForm(ModelForm):
         for sub_recipe in sub_recipes:
             intermidiate_table.objects.create(parent_recipe=recipe, sub_recipe=sub_recipe)
     
+
+class RecipeUpdateForm(ModelForm):
+    form_manager = RecipeFormManager()
+    class Meta:
+        model = Recipe
+        fields = ['title', 'description', 'categories', 'tags']
+
+    def __init__(self, *args, **kwargs):
+        # pop extra args before calling super
+        self.user = kwargs.pop('user', None)
+        extra_forms = kwargs.pop('extra_forms', 1)
+        # now call super with cleaned kwargs
+        super().__init__(*args, **kwargs)
+        data = kwargs.get('data', None)
+        files = kwargs.get('files', None)
+        self.ingredient_formset = self.form_manager.create_formset(RecipeIngredient, RecipeIngredientForm,data=data,instance=self.instance, extra=extra_forms)
+        self.step_formset = self.form_manager.create_formset(RecipeStep, RecipeStepForm,data=data,instance=self.instance, extra=extra_forms)
+        self.image_form = RecipeImageForm(data=data,files=files, instance=self.instance.images.first())
+        self.fields['sub_recipes'] = forms.ModelMultipleChoiceField(
+            queryset=Recipe.objects.filter(author=self.user,is_sub_recipe=True),
+            required=False,
+            widget=forms.CheckboxSelectMultiple(),
+            help_text="Select sub-recipes"
+        )
+        if self.instance and self.instance.pk:
+            self.fields.get('sub_recipes').queryset = self.fields.get('sub_recipes').queryset.exclude(pk=self.instance.pk)
+            self.fields['sub_recipes'].initial = self.instance.sub_recipe.all()
+            print(self.fields['sub_recipes'].initial)
+
+
+    def is_valid(self):
+        valid = super().is_valid()
+        valid = self.image_form.is_valid()
+        return valid
+    
+    def save(self, commit=True):
+        if not self.user:
+            raise ValueError("User must be provided to save the SubRecipeForm.")
+        instance = super().save(commit=False)
+        instance.author = self.user
+        if commit:
+            instance.save()
+            # during update ingredients and steps are being updaed through partol views,
+            # no need ot validate 
+            if self.image_form and self.image_form.has_changed():
+                self.image_form.instance.recipe = instance
+                self.image_form.save()
+        return instance
+    
+
+    def save_recipe_sub_recipe_relationship(self, recipe: Recipe, sub_recipes, intermidiate_table: RecipeSubRecipe) -> None:
+        """
+        Save the relationship between the recipe and its sub-recipes.
+        This method is used to save the relationship between the recipe and its sub-recipes.
+        """
+        for sub_recipe in sub_recipes:
+            intermidiate_table.objects.create(parent_recipe=recipe, sub_recipe=sub_recipe)
+
+    def update_recipe_sub_recipe_relationship(self, recipe: Recipe, new_recipes_to_add, current_sub_recipes, recipe_sub_recipe_model: RecipeSubRecipe):
+        """
+        Update the relationship between the recipe and its sub-recipes.
+        This method is used to update the relationship between the recipe and its sub-recipes.
+        """
+
+        sub_recipes_to_add = new_recipes_to_add - current_sub_recipes
+        to_remove = current_sub_recipes - new_recipes_to_add
+        try:
+            if to_remove:
+                recipe_sub_recipe_model.objects.filter(parent_recipe=recipe, sub_recipe__in=to_remove).delete()
+            if sub_recipes_to_add:
+                recipe_sub_recipe_model.objects.bulk_create([RecipeSubRecipe(parent_recipe=recipe, sub_recipe=sub_recipe) 
+                                                                    for sub_recipe 
+                                                                    in sub_recipes_to_add])
+        except Exception as e:
+            return (False, str(e))
+        return (True, '')
 
 
 class RecipeIngredientForm(ModelForm):
@@ -184,9 +268,9 @@ class SubRecipeCreateForm(ModelForm):
 
     def is_valid(self):
         valid = super().is_valid()
-        valid = self.ingredient_formset.has_changed() and self.ingredient_formset.is_valid()
-        valid = valid and self.step_formset.has_changed() and self.step_formset.is_valid()
-        valid = self.image_form.has_changed() and self.image_form.is_valid()
+        valid = self.ingredient_formset.is_valid()
+        valid = self.step_formset.is_valid()
+        valid = self.image_form.is_valid()
         return valid
     
     def save(self, commit=True):
@@ -215,7 +299,8 @@ class SubRecipeCreateForm(ModelForm):
         This method is used to save the relationship between the recipe and its sub-recipes.
         """
         for sub_recipe in sub_recipes:
-            intermidiate_table.objects.create(parent_recipe=recipe, sub_recipe=sub_recipe)
+            test = intermidiate_table.objects.create(parent_recipe=recipe, sub_recipe=sub_recipe)
+            print(test)
 
 
 class SubRecipeUpdateForm(ModelForm):
@@ -228,26 +313,27 @@ class SubRecipeUpdateForm(ModelForm):
         # pop extra args before calling super
         self.user = kwargs.pop('user', None)
         extra_forms = kwargs.pop('extra_forms', 1)
-        # now call super with cleaned kwargs
+
         super().__init__(*args, **kwargs)
         data = kwargs.get('data', None)
         files = kwargs.get('files', None)
         self.ingredient_formset = self.form_manager.create_formset(RecipeIngredient, RecipeIngredientForm,data=data,instance=self.instance, extra=extra_forms)
         self.step_formset = self.form_manager.create_formset(RecipeStep, RecipeStepForm,data=data,instance=self.instance, extra=extra_forms)
-        self.image_form = RecipeImageForm(data=data,files=files)
+        self.image_form = RecipeImageForm(data=data,files=files, instance=self.instance.images.first())
         self.fields['sub_recipes'] = forms.ModelMultipleChoiceField(
-            queryset=Recipe.objects.filter(author=self.user,is_sub_recipe=True),
+            queryset=Recipe.objects.filter(author=self.user,is_sub_recipe=True, ),
             required=False,
             widget=forms.CheckboxSelectMultiple(),
             help_text="Select sub-recipes"
         )
         if self.instance and self.instance.pk:
             self.fields.get('sub_recipes').queryset = self.fields.get('sub_recipes').queryset.exclude(pk=self.instance.pk)
+            self.fields['sub_recipes'].initial = self.instance.sub_recipes.all()
 
 
     def is_valid(self):
         valid = super().is_valid()
-        valid = self.image_form.has_changed() and self.image_form.is_valid()
+        valid = self.image_form.is_valid()
         return valid
     
     def save(self, commit=True):
@@ -260,7 +346,7 @@ class SubRecipeUpdateForm(ModelForm):
             instance.save()
             # during update ingredients and steps are being updaed through partol views,
             # no need ot validate 
-            if self.image_form or self.image_form.has_changed():
+            if self.image_form and self.image_form.has_changed():
                 self.image_form.instance.recipe = instance
                 self.image_form.save()
         return instance
@@ -274,7 +360,7 @@ class SubRecipeUpdateForm(ModelForm):
         for sub_recipe in sub_recipes:
             intermidiate_table.objects.create(parent_recipe=recipe, sub_recipe=sub_recipe)
 
-    def update_recipe_sub_recipe_relationship(self, recipe: Recipe,new_recipes_to_add, current_sub_recipes, recipe_sub_recipe_model: RecipeSubRecipe):
+    def update_recipe_sub_recipe_relationship(self, recipe: Recipe, new_recipes_to_add, current_sub_recipes, recipe_sub_recipe_model: RecipeSubRecipe):
         """
         Update the relationship between the recipe and its sub-recipes.
         This method is used to update the relationship between the recipe and its sub-recipes.
@@ -284,7 +370,7 @@ class SubRecipeUpdateForm(ModelForm):
         to_remove = current_sub_recipes - new_recipes_to_add
         try:
             if to_remove:
-                recipe_sub_recipe_model.objects.filter(recipe=recipe, sub_recipe__in=to_remove).delete()
+                recipe_sub_recipe_model.objects.filter(parent_recipe=recipe, sub_recipe__in=to_remove).delete()
             if sub_recipes_to_add:
                 recipe_sub_recipe_model.objects.bulk_create([RecipeSubRecipe(parent_recipe=recipe, sub_recipe=sub_recipe) 
                                                                     for sub_recipe 
