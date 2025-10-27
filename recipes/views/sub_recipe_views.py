@@ -2,22 +2,19 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.shortcuts import render, redirect
-
 from django.core.cache import cache
-from django.forms import inlineformset_factory
+from django.db import transaction, IntegrityError
 
 from utils.helpers.mixins import RegisteredUserAuthRequired
-
-from ..models.sub_recipe_models import SubRecipeIngredient, SubRecipeStep, SubRecipe
-from ..forms.sub_recipe_forms import SubRecipeIngredientForm, SubRecipeStepForm, SubRecipeForm
-from ..handlers import sub_recipe_handler
+from ..models.recipe_models import RecipeSubRecipe, Recipe
+from ..forms.recipe_forms import SubRecipeCreateForm, SubRecipeUpdateForm
+from ..handlers import recipes_handler
 
 class SubRecipeListView(ListView):
     """
     View to display all sub recipes, it also handles search functionality.
     """
-    model = SubRecipe
-    form_class = SubRecipeForm
+    model = Recipe
     template_name = 'sub_recipes/sub_recipe_home.html'
     context_object_name = 'sub_recipes'
 
@@ -37,6 +34,7 @@ class SubRecipeListView(ListView):
         cached_queryset_data = cache.get(cache_key)
         if cached_queryset_data is None:
             queryset = super().get_queryset()
+            queryset = queryset.filter(is_sub_recipe=True).prefetch_related('ingredients', 'steps')
             cache.set(cache_key, queryset, timeout=60 * 15)
             return queryset
         return cached_queryset_data
@@ -46,13 +44,13 @@ class SubRecipeListView(ListView):
         search_type = request.GET.get('searchType')
         if search:
             if search_type.lower() == 'title':
-                sub_recipes = self.model.objects.filter(title__icontains=search)
+                sub_recipes = self.model.objects.filter(title__icontains=search, is_sub_recipe=True)
             else:
                 sub_ingredients_to_search = [ingredient.strip() for ingredient in search.split(',') if ingredient.strip()]
 
                 query_set = self.model.objects.all()
                 for ingredient in sub_ingredients_to_search:
-                    query_set = query_set.filter(sub_ingredients__name__icontains=ingredient)
+                    query_set = query_set.filter(sub_ingredients__name__icontains=ingredient, sub_ingredients__is_sub_recipe=True)
                 sub_recipes = query_set.distinct()
         else:
             sub_recipes = self.model.objects.all()
@@ -63,33 +61,39 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
     """"
     View to create sub recipes, it also handles the creation of ingredients and steps in the sub recipe.
     """
-    model = SubRecipe
-    form_class = SubRecipeForm
+    model = Recipe
+    form_class = SubRecipeCreateForm
+    intermidiate_table = RecipeSubRecipe
     template_name = 'sub_recipes/sub_recipe_form.html'
     success_url = reverse_lazy('sub_recipes')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        sub_recipe_context_data = sub_recipe_handler.fetch_sub_recipe_context_data_for_get_request(self.object, extra_forms=1)
-        context.update(sub_recipe_context_data)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['extra_forms'] = 1
+        return kwargs
 
     def form_valid(self, form):
-        form.instance.author = self.request.user
-        self.object = form.save(commit=False)
-
-        context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
-        ingredients_formset = context['ingredients_formset']
-        steps_formset = context['step_formset']
-        if ingredients_formset.is_valid() and steps_formset.is_valid():
-            form.save()
-            ingredients_formset.save()
-            steps_formset.save()
-        else:
-            return super().form_invalid(form)
-        # Invalidate cache for the sub recipe list
-        invalidate_recipe_cache()
+        try:
+            with transaction.atomic():
+                self.object = form.save()
+                sub_recipes = form.cleaned_data.get('sub_recipes')
+                if sub_recipes:
+                    form.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
+                                                                    self.intermidiate_table)
+            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache())
+        except ValueError as ve:
+            # attach the error to the form and return invalid
+            form.add_error(None, str(ve))
+            return self.form_invalid(form)
+        except IntegrityError as ie:
+            form.add_error(None, "Database error occurred")
+            return self.form_invalid(form)
+        except Exception as e:
+            # log as needed
+            form.add_error(None, "Failed to save recipe")
+            return self.form_invalid(form) 
+        
         return redirect(self.object.get_absolute_url())
 
 
@@ -97,15 +101,14 @@ class SubRecipeDetailView(DetailView):
     """"
     View for sub recipe details, also displays related main recipes.
     """
-    model = SubRecipe
-    form_class = SubRecipeForm
+    model = Recipe
     template_name = 'sub_recipes/subrecipe_detail.html'
 
     def get_object(self, queryset=None):
         cache_key = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         cached_object_data = cache.get(cache_key)
         if cached_object_data is None:
-            queryset = self.get_queryset().prefetch_related('sub_ingredients', 'sub_steps', 'main_recipes')
+            queryset = self.get_queryset().prefetch_related('ingredients', 'steps', 'parent_recipe')
             response = super().get_object(queryset)
             cache.set(cache_key, response, timeout=60 * 60)
             return response
@@ -131,37 +134,58 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     """
     View to update sub recipes.
     """
-    model = SubRecipe
-    form_class = SubRecipeForm
-    template_name = 'sub_recipes/recipe_form.html'
+    model = Recipe
+    form_class = SubRecipeUpdateForm
+    intermidiate_table = RecipeSubRecipe
+    template_name = 'sub_recipes/sub_recipe_form.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Create formsets for ingredients and steps in sub recipe
-        sub_recipe_context_data = sub_recipe_handler.fetch_sub_recipe_context_data_for_get_request(self.object)
-        context.update(sub_recipe_context_data)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['extra_forms'] = 0
+        return kwargs
 
     def form_valid(self, form):
-        form.instance.author = self.request.user
-        self.object = form.save(commit=False)
-
-        context = sub_recipe_handler.fetch_sub_recipe_context_data_for_post_request(self.object, self.request)
-        ingredients_formset = context.get('ingredients_formset')
-        steps_formset = context.get('step_formset')
-        forms_list = [ingredients_formset, steps_formset]
-        success = sub_recipe_handler.validate_forms(forms_list)
-        if success:
-            ingredients_formset.save()
-            steps_formset.save()
-            form.save()
-        else:
+        try:
+            with transaction.atomic():
+                self.object = form.save()
+                if 'sub_recipes' in form.changed_data:
+                    existing_sub_recipes = set(self.object.sub_recipe.all())
+                    new_sub_recipes = set(form.cleaned_data.get('sub_recipes'))
+                    sub_recipe_id = f'sub_recipe_detail_{self.object.pk}'
+                    if not existing_sub_recipes:
+                        if new_sub_recipes:
+                            form.save_recipe_sub_recipe_relationship(
+                                self.object,
+                                new_sub_recipes,
+                                self.intermidiate_table
+                            )
+                    if existing_sub_recipes != new_sub_recipes:
+                        # Remove old relationships
+                        success, message = form.update_recipe_sub_recipe_relationship(
+                            self.object,
+                            new_sub_recipes,
+                            existing_sub_recipes,
+                            self.intermidiate_table
+                        )
+                        if not success:
+                            raise ValueError(message)
+                    # Invalidate cache for this sub recipe
+            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache(sub_recipe_id))
+        except ValueError as ve:
+            # attach the error to the form and return invalid
+            form.add_error(None, str(ve))
             return self.form_invalid(form)
-        # Invalidate cache for the sub recipe list
-        recipe_id = f'sub_recipe_detail_{self.object.id}'
-        invalidate_recipe_cache(recipe_id)
-        return super().form_valid(form)
+        except IntegrityError as ie:
+            form.add_error(None, "Database error occurred")
+            return self.form_invalid(form)
+        except Exception as e:
+            # log as needed
+            form.add_error(None, "Failed to save recipe")
+            return self.form_invalid(form) 
+        
+        return redirect(self.get_success_url())
+        
 
 
 class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
@@ -169,7 +193,7 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     View to delete sub recipes, it doesn't inherite from the becase because form_class messes up with it's logic
     """
     template_name = 'sub_recipes/subrecipe_confirm_delete.html'
-    model = SubRecipe
+    model = Recipe
     success_url = reverse_lazy('recipes:sub_recipes')
 
     def delete(self, request, *args, **kwargs):
@@ -181,7 +205,6 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
         # Invalidate cache for this recipe and the recipe list
         cache_key_detail = f'sub_recipe_detail_{self.kwargs.get("pk")}'
         invalidate_recipe_cache(cache_key_detail)
-
         return super().delete(request, *args, **kwargs)
     
 
@@ -202,4 +225,3 @@ def invalidate_recipe_cache(recipe_id=None):
         cache_key_detail = f'sub_recipe_detail_{recipe_id}'
         cache.delete(cache_key_detail)
     cache.delete('sub_recipe_list_queryset')
-    return JsonResponse({'status': 'Cache invalidated'})

@@ -22,7 +22,6 @@ export interface FormManagerConfig{
     addButtonId: string;
     saveButtonId: string;
     removeButtonId: string;
-    mainFormId: string;
     openModalButtonId: string;
     htmlDetailPageId: string
     htmxTargetId: string;

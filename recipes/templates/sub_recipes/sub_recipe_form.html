@@ -4,15 +4,47 @@
 {% block content %}
 <div class="container">
     <form id='sub-recipe-form' method="POST" action="{% if object %}{% url 'recipes:update_sub_recipe' object.id %}
-    {% else %}
-    {% url 'recipes:create_sub_recipe' %}{% endif %}" 
-     autocomplete="off" enctype="multipart/form-data">
-     {% csrf_token %}
-     {{ form|crispy }}
-     <div class="conteiner-for-ingredients-and-steps">
-         {% include 'recipes/partials/steps_and_ingredients_for_create_form.html'%}
-     </div>
+        {% else %}
+        {% url 'recipes:create_sub_recipe' %}{% endif %}" 
+        autocomplete="off" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div id="ingredients-hidden">
+            {{ form.ingredients_formset.management_form }}
+        </div>
+        <div id="steps-hidden">
+            {{ form.steps_formset.management_form }}
+        </div>
+        <div id="sub-recipes-hidden"></div>
+       <div class="mb-3">
+            {{ form.title|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+            {{ form.description|as_crispy_field }}
+        </div>
+        <div class="mb-3" id="id_picture">
+            {{ form.image_form.picture|as_crispy_field }}
+            <img id="image-preview" src="#" alt="Image preview" style="display:none; max-width: 300px; margin-top: 10px;" />
+        </div>
+        <div class="dropdown mb-4">
+            {% if form.sub_recipes %}
+                <button type="button" class="btn btn-primary mb-3" id="subRecipeButton" data-bs-toggle="modal" data-bs-target="#subRecipesModal">
+                    Select Sub-Recipes
+                </button>
+            {% endif %}
+           
+            {% include 'recipes/partials/recipe_action_buttons.html' with action="Edit"%}
+            {% include 'recipes/partials/recipe_steps_action_button.html' with action="Edit" %}
+        </div>
+        <div id="ingredients-modal-container"></div>
+        <div id="steps-modal-container"></div>"
+        <div class="form-group py-3">
+            <input class="btn btn-outline-primary" type="submit" value="Save" />
+        </div>
+        <div class="border-top pt-3">
+            <a href="{% url 'recipes:home' %}">Cancel</a>
+        </div>
     </form>
 </div>
 <script type="module" src="{% static 'js/recipes/main.js' %}"></script>
+ {% include 'recipes/html_modals/sub_recipe_modal.html' %}
 {% endblock %}
