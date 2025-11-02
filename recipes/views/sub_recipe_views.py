@@ -9,6 +9,7 @@ from utils.helpers.mixins import RegisteredUserAuthRequired
 from ..models.recipe_models import RecipeSubRecipe, Recipe
 from ..forms.recipe_forms import SubRecipeCreateForm, SubRecipeUpdateForm
 from ..handlers import recipes_handler
+from ..handlers.recipes_handler import invalidate_recipe_cache
 
 class SubRecipeListView(ListView):
     """
@@ -48,12 +49,12 @@ class SubRecipeListView(ListView):
             else:
                 sub_ingredients_to_search = [ingredient.strip() for ingredient in search.split(',') if ingredient.strip()]
 
-                query_set = self.model.objects.all()
+                query_set = self.model.objects.filter(is_sub_recipe=True)
                 for ingredient in sub_ingredients_to_search:
-                    query_set = query_set.filter(sub_ingredients__name__icontains=ingredient, sub_ingredients__is_sub_recipe=True)
+                    query_set = query_set.filter(ingredients__name__icontains=ingredient)
                 sub_recipes = query_set.distinct()
         else:
-            sub_recipes = self.model.objects.all()
+            sub_recipes = self.model.objects.filter(is_sub_recipe=True)
         return render(request, 'recipes/partials/sub_recipe_list.html', {'sub_recipes': sub_recipes})
 
 

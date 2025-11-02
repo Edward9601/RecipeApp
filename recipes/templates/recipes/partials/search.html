@@ -4,7 +4,7 @@
     hx-get="{% url search_url %}"
     hx-target="#results"
     hx-trigger="input changed delay:500ms from:#search-input">
-    <div class="input-group">
+    <div class="input-group w-50">
         <input type="text" id="search-input" name="search_text" class="form-control" placeholder="Search recipes..." autocomplete="off">
         <select name="searchType" class="form-select" style="max-width: 150px;">
             <option value="title">Title</option>
