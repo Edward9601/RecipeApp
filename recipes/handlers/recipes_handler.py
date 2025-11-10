@@ -71,14 +71,17 @@ def set_cached_object(key: str, value, timeout=None) -> tuple:
 
 
 
-def invalidate_recipe_cache(recipe_id=None) -> dict:
+def invalidate_recipe_cache(recipe_id:str=None, is_subrecipe:bool=False) -> dict:
     """
     Invalidates the recipe cache.
     """
     try:
         if recipe_id:
             cache.delete(recipe_id)
-        cache.delete('recipe_list_queryset')
+        if is_subrecipe:
+            cache.delete('sub_recipe_list_queryset')
+        else:
+            cache.delete('recipe_list_queryset')
     except Exception as e:
         return {'status': 'Cache invalidation failed', 'error': str(e)}
     return {'status': 'Cache invalidated'}
