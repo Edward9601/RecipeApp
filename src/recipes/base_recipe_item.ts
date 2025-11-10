@@ -4,41 +4,55 @@ import { UnsavedChangesModalManager } from "../shared/unsaved_changes_modal_mana
 export abstract class BaseFormManager<T> {
 
     protected config: FormManagerConfig;
-    protected readonly htmlModal!: HTMLElement;
-    protected readonly htmlForm!: HTMLFormElement;
+    protected htmlModal: HTMLElement;
+    protected htmlForm: HTMLFormElement;
     protected readonly addButton!: HTMLButtonElement;
     protected readonly saveButton!: HTMLButtonElement;
     protected readonly openModalButton!: HTMLButtonElement;
-    protected readonly mainForm!: HTMLFormElement;
     protected unsavedChangesManager: UnsavedChangesModalManager = UnsavedChangesModalManager.getInstance()
 
+    protected mainForm: HTMLElement | null = null;
     protected isUpdateMode: boolean | null = null;
+    protected isCreateMode: boolean = false;
+    protected readonly isDetailPage: HTMLElement | null = null;
     protected hasUnsavedChanges: boolean = false;
     protected reloadItems: boolean = false;
     protected originalFormData: FormData| null = null;
-    protected readonly detailPage: HTMLElement | null = null;
+    protected recipeType: 'recipe' | 'sub_recipe' = 'recipe';
+    
     protected isBound: boolean = false;
 
     constructor(config: FormManagerConfig){
         this.config = config;
 
         this.htmlModal = document.getElementById(config.htmlModalId) as HTMLElement;
-        if(this.htmlModal){
-            this.htmlForm = document.getElementById(config.htmlFormId) as HTMLFormElement;
-            this.addButton = document.getElementById(config.addButtonId) as HTMLButtonElement;
-            this.saveButton = document.getElementById(config.saveButtonId) as HTMLButtonElement;
-            this.detailPage = document.querySelector(config.htmlDetailPageId);
-            this.mainForm = document.getElementById(config.mainFormId) as HTMLFormElement;
-            this.isUpdateMode = this.saveButton?.getAttribute('data-mode')?.match(/update/i) ? true : false;
-            this.originalFormData = this.getFormData(this.htmlForm);
-            if(!this.isBound){
-                this.templateInitialize();
-                this.isBound = true;
-            }
-            
-            
+        this.htmlForm = document.getElementById(config.htmlFormId) as HTMLFormElement;
+        this.addButton = document.getElementById(config.addButtonId) as HTMLButtonElement;
+        this.saveButton = document.getElementById(config.saveButtonId) as HTMLButtonElement;
+        this.isDetailPage = document.querySelector(config.htmlDetailPageId);
+        this.isCreateMode = !this.isDetailPage;
+        this.isUpdateMode = this.saveButton?.getAttribute('data-mode')?.match(/update/i) ? true : false;
+        this.originalFormData = this.getFormData(this.htmlForm);
+        if(!this.isBound){
+            this.templateInitialize();
+            this.detectContext();
+            this.isBound = true;
         }
     }
+
+    private detectContext(): void {
+        // Detect main form
+        this.mainForm = document.querySelector('#recipe-form, #sub-recipe-form');
+        
+        // Detect recipe type
+        if (this.mainForm) {
+            this.recipeType = this.mainForm.id === 'sub-recipe-form' ? 'sub_recipe' : 'recipe';
+        } else {
+            // Check URL or page content for recipe type
+            this.recipeType = window.location.pathname.includes('sub-recipes') ? 'sub_recipe' : 'recipe';
+        }
+    }
+
 
     protected templateInitialize(): void {
         this.setupHtmxInterception(this.htmlModal);

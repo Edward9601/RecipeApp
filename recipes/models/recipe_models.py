@@ -1,11 +1,13 @@
 from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
-from utils.models import AbstractImageModel
+from django.forms import ValidationError
+from utils.models import AbstractImageModel, ImageHandler
 from django.urls import reverse
 
-from .sub_recipe_models import SubRecipe
 from .base_models import BaseRecipe, Ingredient, Step
+
+import os
 
 
 """
@@ -42,12 +44,19 @@ class Recipe(BaseRecipe):
     They can also be categorized and tagged for better organization.
     """
     description = models.TextField(blank=True, null=True)
-    sub_recipes = models.ManyToManyField(SubRecipe, through='RecipeSubRecipe',
-                                         related_name='main_recipes', blank=True)
+    parent_recipe = models.ManyToManyField('self', 
+                                         through='RecipeSubRecipe',
+                                         through_fields=('sub_recipe', 'parent_recipe'),
+                                         related_name='sub_recipe',
+                                         blank=True,
+                                         symmetrical=False)
+    is_sub_recipe = models.BooleanField(default=False)
     categories = models.ManyToManyField(Category, related_name='recipes', blank=True)
     tags = models.ManyToManyField(Tag, related_name='recipes', blank=True)
 
     def get_absolute_url(self):
+        if self.is_sub_recipe:
+            return reverse('recipes:sub_recipes_detail', kwargs={'pk': self.pk})
         return reverse('recipes:detail', kwargs={'pk': self.pk})
 
 
@@ -58,6 +67,18 @@ class RecipeImage(AbstractImageModel):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='images')
 
     thumbnail_folder = 'recipes_pictures_thumbs_medium'
+
+
+    def save(self, *args, **kwargs):
+        # Only rename if both recipe and picture are set
+        if self.picture and self.recipe:
+            image_handler = ImageHandler(self.picture)
+            orig = self.picture
+            ext = os.path.splitext(orig.name)[1]
+            base_name = image_handler.slugify_name(self.recipe.title)
+            new_name = f'{base_name}{ext}'
+            self.picture.name = new_name
+        super().save(*args, **kwargs)
 
     def get_thumbnail_url(self,):
 
@@ -73,14 +94,26 @@ class RecipeSubRecipe(models.Model):
     Intermediate model to represent the relationship between a recipe and its sub-recipes.
     This allows for a many-to-many relationship where a recipe can have multiple sub-recipes
     and a sub-recipe can be part of multiple recipes."""
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='linked_recipes')
-    sub_recipe = models.ForeignKey(SubRecipe, on_delete=models.CASCADE, related_name='linked_sub_recipes')
+    parent_recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='parent_recipe_relation', blank=True, default=None)
+    sub_recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='sub_recipe_relation', blank=True)
 
     class Meta:
         constraints = [
-           models.UniqueConstraint(fields=['recipe', 'sub_recipe'], name='unique_parent_child_relation')
+           # Ensure unique parent-sub-recipe pairs
+           models.UniqueConstraint(fields=['parent_recipe', 'sub_recipe'], name='%(app_label)s_%(class)s_unique_parent_child_relation'),
+           # Prevent a recipe from being its own sub-recipe
+           models.CheckConstraint(check=~models.Q(parent_recipe=models.F('sub_recipe')), name='%(app_label)s_%(class)s_no_self_reference'),
         ]
 
+    def clean(self):
+        # Prevent circular reference (A→B and B→A)
+        if RecipeSubRecipe.objects.filter(parent_recipe=self.sub_recipe,
+                                          sub_recipe=self.parent_recipe).exists():
+            raise ValidationError("Circular sub-recipe relationships are not allowed.")
+
+        # Optional: prevent self-reference
+        if self.parent_recipe == self.sub_recipe:
+            raise ValidationError("A recipe cannot be a sub-recipe of itself.")
 
 class RecipeIngredient(Ingredient):
     """

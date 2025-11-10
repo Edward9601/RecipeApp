@@ -15,10 +15,10 @@
                                     <input type="checkbox" 
                                            class="form-check-input" 
                                            name="categories"
-                                           id="{{ category.id_for_label }}"
+                                           id="id_categories_{{ category.data.value }}"
                                            value="{{ category.data.value }}"
                                            {% if category.data.selected %}checked{% endif %}>
-                                    <label class="form-check-label" for="{{ category.id_for_label }}">
+                                    <label class="form-check-label">
                                         {{ category.choice_label }}
                                     </label>
                                 </div>
@@ -33,10 +33,10 @@
                                     <input type="checkbox" 
                                            class="form-check-input" 
                                            name="tags"
-                                           id="{{ tag.id_for_label }}"
+                                           id="id_tags_{{ tag.data.value }}"
                                            value="{{ tag.data.value }}"
                                            {% if tag.data.selected %}checked{% endif %}>
-                                    <label class="form-check-label" for="{{ tag.id_for_label }}">
+                                    <label class="form-check-label">
                                         {{ tag.choice_label }}
                                     </label>
                                 </div>

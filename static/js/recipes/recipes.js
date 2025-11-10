@@ -4,7 +4,7 @@ var elementIdentifier;
     elementIdentifier["TAGS"] = "tags";
 })(elementIdentifier || (elementIdentifier = {}));
 export class RecipeManager {
-    constructor() {
+    constructor(formId) {
         this.mainForm = null;
         // Cattegories and tags block
         // Using Sets to avoid duplicates and for easier management
@@ -18,7 +18,7 @@ export class RecipeManager {
         this.selectedSubRecipes = new Set();
         this.initialSubRecipeSelectionLoaded = false;
         this.imagePreview = null;
-        this.mainForm = document.getElementById('recipe-form');
+        this.mainForm = document.getElementById(formId);
         this.categoriesAndTagsModal = document.getElementById('categoriesAndTagsModal');
         this.imagePreview = document.getElementById('image-preview');
         this.subRecipesModal = document.getElementById('subRecipesModal');

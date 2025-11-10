@@ -9,13 +9,13 @@
             <div class="modal-body">
                 <div id="modal-form-elements">
                     <div class="ingredients-section mb-4">
-                        <form id="ingredients-modal-from">
+                        <form id="ingredients-modal-form">
                             <div id="ingredients-list" class="form-check">
                                 {{ ingredients_formset.management_form }}
                                 <div id="ingredients-formset" class="ingredients-container">
-                                    {% for ingredient_form in ingredients_formset %}
-                                        {{ ingredient_form.id }}
+                                    {% for ingredient_form in ingredients_formset %}  
                                         <div class="ingredient-card">
+                                            {{ ingredient_form.id }}
                                             <div class="ingredient-form border p-4 rounded shadow">
                                                 {{ ingredient_form.name.label_tag }} {{ ingredient_form.name }}
                                                 {{ ingredient_form.quantity.label_tag }} {{ ingredient_form.quantity }}

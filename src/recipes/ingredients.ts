@@ -2,7 +2,6 @@
 import { Ingredient } from "./interfaces/recipe_items_interfaces.js";
 import { BaseFormManager } from "./base_recipe_item.js";
 import { FormManagerConfig } from './interfaces/recipe_items_interfaces.js'
-import { RecipeManager } from "./recipes.js";
 
 export class IngredientsManager extends BaseFormManager<Ingredient> {
 
@@ -160,8 +159,8 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
 
             const result = await response.json();
             if (result.success) {
-                if(this.detailPage){
-                    this.updateIngredients(result.ingredients, this.detailPage);
+                if(this.isDetailPage){
+                    this.updateIngredients(result.ingredients, this.isDetailPage);
                 }
                 this.showMessage('Ingredients saved successfully.');
 
@@ -179,9 +178,10 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
         super.hideLoadingState();
     }
 
-    private updateIngredients(ingredients: Ingredient[], detailsPage: HTMLElement): void {
+    private updateIngredients(ingredients: Ingredient[], detailsPage: HTMLElement): void { 
         const ingredientsList = detailsPage.querySelector('#ingredients-detail-list ul');
-        if(!ingredientsList) return;
+        if(!ingredientsList) return; // TODO: handle case where list is not found, probaly show a message and display button to refresht cache,
+                                    // if we got to this point, ingredients were saved successfully but we cant update the list
 
         ingredientsList.innerHTML = '';
         const activeIngredients = ingredients.filter(ingredients => !ingredients.isDeleted);
@@ -213,14 +213,13 @@ export class IngredientsManager extends BaseFormManager<Ingredient> {
     }
 
     private saveIngredientsToHiddenForm(): number| null {
-        const mainForm = document.getElementById(`${this.config.mainFormId}`) as HTMLElement;
-        if (!mainForm) {
+        if (!this.mainForm) {
             console.error('Main recipe form not found');
             return null;
         }
 
         // Get the ingredients hidden container
-        const ingredientsContainer = mainForm.querySelector('#ingredients-hidden') as HTMLElement;
+        const ingredientsContainer = this.mainForm.querySelector('#ingredients-hidden') as HTMLElement;
         if (!ingredientsContainer) {
             console.error('Ingredients hidden container not found');
             return null;

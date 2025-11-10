@@ -65,7 +65,8 @@ class ImageHandler():
             buffer = BytesIO()
             img.save(buffer, format='JPEG', quality=95)
             buffer.seek(0)
-            return ContentFile(buffer.read(), name=image.name.replace('.heic', '.jpg'))
+            pic_name = image.name.rsplit('.', 1)[0] + '.jpg'
+            return ContentFile(buffer.read(), name=pic_name)
         except Exception as e:
             print(f'Error converting image: {e}')
             return None
