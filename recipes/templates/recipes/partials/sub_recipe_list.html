@@ -1,13 +1,18 @@
 {% if sub_recipes %}
 <div class="row">
     {% for sub_recipe in sub_recipes %}
-                <div class="col-md-4 mb-4">
-                    <div class="card my-4">
-                        <div class="card-body">
-                            <a href="{% url 'recipes:sub_recipes_detail' sub_recipe.pk %}"  class="card-title"><h5>{{ sub_recipe.title }}</h5></a>
-                        </div>
-                    </div>
+        <div class="col-md-4 mb-4">
+            <div class="card my-4">
+                    {% if sub_recipe.images.first %}
+                    <a href="{% url 'recipes:sub_recipes_detail' sub_recipe.pk %}">
+                        <img src="{{ sub_recipe.images.first.get_thumbnail_url }}" class="image" alt="{{ sub_recipe.title|title }}">
+                    </a>
+                {% endif %}
+                <div class="card-body">
+                    <a href="{% url 'recipes:sub_recipes_detail' sub_recipe.pk %}"  class="card-title"><h5>{{ sub_recipe.title }}</h5></a>
                 </div>
+            </div>
+        </div>
     {% endfor %}
 </div>
 {% else %}

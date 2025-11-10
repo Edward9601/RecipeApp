@@ -82,7 +82,7 @@ class SubRecipeCreateView(RegisteredUserAuthRequired, CreateView):
                 if sub_recipes:
                     form.save_recipe_sub_recipe_relationship(self.object, sub_recipes, 
                                                                     self.intermidiate_table)
-            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache())
+            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache(is_subrecipe=True))
         except ValueError as ve:
             # attach the error to the form and return invalid
             form.add_error(None, str(ve))
@@ -150,10 +150,10 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
         try:
             with transaction.atomic():
                 self.object = form.save()
+                sub_recipe_id = f'sub_recipe_detail_{self.object.pk}'
                 if 'sub_recipes' in form.changed_data:
                     existing_sub_recipes = set(self.object.sub_recipe.all())
                     new_sub_recipes = set(form.cleaned_data.get('sub_recipes'))
-                    sub_recipe_id = f'sub_recipe_detail_{self.object.pk}'
                     if not existing_sub_recipes:
                         if new_sub_recipes:
                             form.save_recipe_sub_recipe_relationship(
@@ -172,7 +172,7 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
                         if not success:
                             raise ValueError(message)
                     # Invalidate cache for this sub recipe
-            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache(sub_recipe_id))
+            transaction.on_commit(lambda: recipes_handler.invalidate_recipe_cache(sub_recipe_id, is_subrecipe=True))
         except ValueError as ve:
             # attach the error to the form and return invalid
             form.add_error(None, str(ve))
@@ -205,7 +205,7 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
         """
         # Invalidate cache for this recipe and the recipe list
         cache_key_detail = f'sub_recipe_detail_{self.kwargs.get("pk")}'
-        invalidate_recipe_cache(cache_key_detail)
+        recipes_handler.invalidate_recipe_cache(cache_key_detail, is_subrecipe=True)
         return super().delete(request, *args, **kwargs)
     
 
@@ -216,13 +216,3 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
         and the cache is invalidated for both the detail and list sub recipes.
         """
         return self.delete(request, *args, **kwargs)
-    
-
-def invalidate_recipe_cache(recipe_id=None):
-    """
-    Invalidates the sub recipe cache.
-    """
-    if recipe_id:
-        cache_key_detail = f'sub_recipe_detail_{recipe_id}'
-        cache.delete(cache_key_detail)
-    cache.delete('sub_recipe_list_queryset')
