@@ -10,13 +10,13 @@
             <div class="modal-body">
                 <div id="modal-form-elements">
                     <div class="steps-section mb-4">
-                        <form id="steps-modal-from">
+                        <form id="steps-modal-form">
                             <div id="steps-list" class="form-check">
                                 {{ steps_formset.management_form }}
                                 <div id="steps-formset" class="steps-container">
                                     {% for steps_form in steps_formset %}
-                                        {{ steps_form.id }}
                                         <div class="step-card mb-4" style="max-width: 600px; margin: 0 auto;">
+                                            {{ steps_form.id }}
                                             <div class="step-form border p-4 rounded shadow">
                                                 <div class="mb-3">
                                                     {{ steps_form.order }} 
