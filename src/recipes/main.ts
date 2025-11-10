@@ -36,7 +36,7 @@ function BuildConfig(objectType: RecipeObjectType, mainFormId?: string): FormMan
             return {
                     fieldPrefix: "ingredient",
                     htmlModalId: "ingredientsModal",
-                    htmlFormId: "ingredients-modal-from",
+                    htmlFormId: "ingredients-modal-form",
                     addButtonId: "add-ingredient-button",
                     saveButtonId: "save-ingredients-button",
                     removeButtonId: ".remove-button",
@@ -48,7 +48,7 @@ function BuildConfig(objectType: RecipeObjectType, mainFormId?: string): FormMan
             return {
                     fieldPrefix: "step",
                     htmlModalId: "stepsModal",
-                    htmlFormId: "steps-modal-from",
+                    htmlFormId: "steps-modal-form",
                     addButtonId: "add-steps-button",
                     saveButtonId: "save-steps-button",
                     removeButtonId: ".remove-button",
