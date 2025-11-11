@@ -157,7 +157,7 @@ def get_db_config():
         }
     
     if ENV == 'development':
-        print('connecting to neaon')
+
         db_url = os.getenv("DATABASE_URL")
         if not db_url:
             raise ValueError("DATABASE_URL environment variable is required for development environment")
