@@ -179,10 +179,10 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
 
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
+        
         try:
             with transaction.atomic():
-                self.object.save()                      
+                self.object = form.save()                   
                 if 'sub_recipes' in form.changed_data:
                     new_recipes_to_add = set(form.cleaned_data.get('sub_recipes', []))
                     current_sub_recipes = set(self.object.sub_recipe.all())
