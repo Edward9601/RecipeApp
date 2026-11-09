@@ -26,6 +26,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='recipesubrecipe',
-            constraint=models.CheckConstraint(check=models.Q(('parent_recipe', models.F('sub_recipe')), _negated=True), name='recipes_recipesubrecipe_no_self_reference'),
+            constraint=models.CheckConstraint(condition=models.Q(('parent_recipe', models.F('sub_recipe')), _negated=True), name='recipes_recipesubrecipe_no_self_reference'),
         ),
     ]

@@ -6,8 +6,8 @@ A Django-based recipe website where users can create, view, and manage their own
 WebSite URL: https://recipeapp-17q5.onrender.com
 
 ## 🔧 Tech Stack
-- Python 3
-- Django 5.x
+- Python 3.14
+- Django 6.1
 - PostgreSQL
 - Redis (for caching and session storage)
 - Render (deployment)
@@ -31,8 +31,8 @@ WebSite URL: https://recipeapp-17q5.onrender.com
 1. **Clone the repository:**
 2. **Create and activate a virtual environment:**
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
+   python3.14 -m venv .venv
+   source .venv/bin/activate
    ```
 3. **Install Python dependencies:**
    ```bash

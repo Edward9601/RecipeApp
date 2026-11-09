@@ -102,7 +102,7 @@ class RecipeSubRecipe(models.Model):
            # Ensure unique parent-sub-recipe pairs
            models.UniqueConstraint(fields=['parent_recipe', 'sub_recipe'], name='%(app_label)s_%(class)s_unique_parent_child_relation'),
            # Prevent a recipe from being its own sub-recipe
-           models.CheckConstraint(check=~models.Q(parent_recipe=models.F('sub_recipe')), name='%(app_label)s_%(class)s_no_self_reference'),
+           models.CheckConstraint(condition=~models.Q(parent_recipe=models.F('sub_recipe')), name='%(app_label)s_%(class)s_no_self_reference'),
         ]
 
     def clean(self):

@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Django local data and generated files
+*.sqlite3
+media/
+test_media/
+staticfiles/
+
+# Node.js and TypeScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.tsbuildinfo
+
+# Editors and operating systems
+.DS_Store
+.idea/
+*.swp
+*.swo
