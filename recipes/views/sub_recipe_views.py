@@ -140,6 +140,10 @@ class SubRecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     intermidiate_table = RecipeSubRecipe
     template_name = 'sub_recipes/sub_recipe_form.html'
 
+    def get_queryset(self):
+        # Authorization boundary: a sub-recipe mutation must belong to the current owner and remain a sub-recipe.
+        return super().get_queryset().filter(author=self.request.user, is_sub_recipe=True)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
@@ -197,6 +201,10 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
     model = Recipe
     success_url = reverse_lazy('recipes:sub_recipes')
 
+    def get_queryset(self):
+        # Authorization boundary: a delete request must target a sub-recipe owned by the current user.
+        return super().get_queryset().filter(author=self.request.user, is_sub_recipe=True)
+
     def delete(self, request, *args, **kwargs):
         """ 
         Handles the deletion of a sub recipe.
@@ -215,4 +223,5 @@ class SubRecipeDeleteView(RegisteredUserAuthRequired, DeleteView):
         This method overrides the default post method to ensure that the sub recipe is deleted
         and the cache is invalidated for both the detail and list sub recipes.
         """
+        # The queryset is already scoped to the owner and is_sub_recipe=True, so this delete is authorized.
         return self.delete(request, *args, **kwargs)

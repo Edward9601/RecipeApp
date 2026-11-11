@@ -171,6 +171,10 @@ class RecipeUpdateView(RegisteredUserAuthRequired, UpdateView):
     template_name = 'recipes/recipe_update.html'
     intermidiate_table = RecipeSubRecipe
 
+    def get_queryset(self):
+        # Authorization boundary: only the current owner may mutate a regular recipe.
+        return super().get_queryset().filter(author=self.request.user, is_sub_recipe=False)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
@@ -224,6 +228,10 @@ class RecipeDeleteView(DeleteView):
     """
     model = Recipe
     success_url = reverse_lazy('recipes:home')
+
+    def get_queryset(self):
+        # Authorization boundary: a delete request must target a regular recipe owned by the current user.
+        return super().get_queryset().filter(author=self.request.user, is_sub_recipe=False)
 
     def delete(self, request, *args, **kwargs):
         """ 
@@ -281,7 +289,8 @@ class IngredientsPartialView(RegisteredUserAuthRequired, View):
             cache_key = f'recipe_ingredients_{pk}'
             context = recipes_handler.get_cached_object(cache_key)
             if not context:
-                recipe = self.model.objects.get(id=pk)
+                # Only the owner may load a recipe's ingredient form, so the query must be scoped to the current user.
+                recipe = get_object_or_404(self.model.objects.filter(author=self.request.user, is_sub_recipe=False), pk=pk)
                 context = recipes_handler.fetch_partial_recipe_context_data_for_get(recipe, 'ingredients')
                 recipes_handler.set_cached_object(cache_key, context)
         else:
@@ -301,7 +310,8 @@ class IngredientsPartialView(RegisteredUserAuthRequired, View):
         """
         
         try:
-            recipe = get_object_or_404(self.model, pk=pk)
+            # Authorization boundary: recipe ingredient updates are only valid for the current owner's regular recipe.
+            recipe = get_object_or_404(self.model.objects.filter(author=request.user, is_sub_recipe=False), pk=pk)
             context = recipes_handler.fetch_partial_form_for_post_request(request, 'ingredients', recipe)
 
             ingredients_formset = context.get('ingredients_formset')
@@ -372,7 +382,8 @@ class StepsPartialView(RegisteredUserAuthRequired, View):
             cache_key = f'recipe_steps_{pk}'
             context = recipes_handler.get_cached_object(cache_key)
             if not context:
-                recipe = self.model.objects.get(id=pk)
+                # Only the recipe owner may open the step editor for a regular recipe.
+                recipe = get_object_or_404(self.model.objects.filter(author=self.request.user, is_sub_recipe=False), pk=pk)
                 context = recipes_handler.fetch_partial_recipe_context_data_for_get(recipe, 'steps')
                 recipes_handler.set_cached_object(cache_key, context)
         else:
@@ -392,7 +403,8 @@ class StepsPartialView(RegisteredUserAuthRequired, View):
         """
         
         try:
-            recipe = get_object_or_404(self.model, pk=pk)
+            # Authorization boundary: step updates must belong to the current user's regular recipe.
+            recipe = get_object_or_404(self.model.objects.filter(author=request.user, is_sub_recipe=False), pk=pk)
             context = recipes_handler.fetch_partial_form_for_post_request(request,'steps', recipe)
 
             steps_formset = context.get('steps_formset')
